@@ -6,10 +6,9 @@ interactive PyQt5 interface for generating laser pulses, propagating them
 through optical fibers, and simulating a mode-locked Er-doped fiber **ring
 laser** that builds a pulse up from noise.
 
-> This project depends on pyLaserPulse for the underlying physics
-> (GNLSE solver, fiber models, gain model, and component catalogue).
-> pyLaserPulse must be installed separately — see
-> [Installation](#installation).
+> **Standalone:** this repository bundles a copy of the pyLaserPulse package
+> (see the `pyLaserPulse/` directory), so you do **not** need to install it
+> separately. Just install the Python requirements below and run.
 
 ## Features
 
@@ -37,23 +36,20 @@ laser** that builds a pulse up from noise.
 
 ## Installation
 
-### 1. Install pyLaserPulse (required dependency)
+This project is self-contained. Clone it and install the Python requirements:
 
 ```bash
-git clone https://github.com/jsfeehan/pyLaserPulse.git
-cd pyLaserPulse
-pip install -e . --no-deps
-```
-
-### 2. Install this project's requirements
-
-```bash
+git clone https://github.com/FTXpart2/pulse-gui.git
+cd pulse-gui
+python -m venv .venv
+# Windows:  .\.venv\Scripts\activate
+# macOS/Linux:  source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> Tested with Python 3.13. The pinned versions in pyLaserPulse's own
-> `requirements.txt` target older interpreters; on modern Python install the
-> dependencies listed in this repo's `requirements.txt` instead.
+> Tested with Python 3.13. A bundled copy of pyLaserPulse lives in the
+> `pyLaserPulse/` directory and is imported automatically when you run from the
+> repository root — no separate pyLaserPulse install is required.
 
 ## Running
 
@@ -99,14 +95,17 @@ cavity lases, then enable it to watch buildup from noise.
 ## Project layout
 
 ```
-pulse_gui/
+pulse_gui/                      # the GUI application
 ├── __main__.py                 # python -m pulse_gui entry point
 ├── pulse_shapes.py             # Gaussian / Soliton / Square generation
 ├── simulation.py               # Passive single-pass fiber propagation
 ├── mode_locked_simulation.py   # Er-doped ring laser backend
 ├── saturable_absorber.py       # Custom fast saturable absorber component
 └── main_window.py              # PyQt5 GUI
+pyLaserPulse/                   # bundled physics engine (see attribution)
 run_pulse_gui.py                # Launcher
+requirements.txt
+LICENSE
 ```
 
 ## Notes
@@ -115,7 +114,13 @@ Reaching a clean, stable mode-locked pulse from noise is parameter-sensitive
 and may require tuning (pump power, saturable-absorber settings, filter
 transmission) and many round trips. All parameters are exposed in the UI.
 
-## License
+## Attribution & License
 
-See the upstream [pyLaserPulse](https://github.com/jsfeehan/pyLaserPulse)
-project (GPLv3) for the physics engine this tool builds on.
+The `pyLaserPulse/` directory is a bundled copy of
+[pyLaserPulse](https://github.com/jsfeehan/pyLaserPulse) by James S. Feehan,
+distributed under the **GPLv3** license (see `LICENSE`). All credit for the
+underlying physics — the GNLSE solver, fiber models, Giles gain model, and
+component catalogue — belongs to that project.
+
+Because this repository includes GPLv3-licensed code, it is also distributed
+under the GPLv3.
