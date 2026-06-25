@@ -36,13 +36,13 @@ ER_FIBRES = {
 @dataclass
 class RingLaserConfig:
     er_fibre_name: str = "nLight Er80-4/125-HD-PM"
-    active_length_m: float = 0.5
-    passive_length_m: float = 10.0
-    pump_power_w: float = 0.6
+    active_length_m: float = 0.25
+    passive_length_m: float = 5.0
+    pump_power_w: float = 0.040
     pump_wavelength_nm: float = 976.0
     output_tap_percent: float = 10.0
     bandpass_transmission: float = 0.85
-    round_trips: int = 60
+    round_trips: int = 250
     grid_points: int = 2**11
     central_wl_nm: float = 1550.0
     max_wl_nm: float = 2000.0
@@ -50,6 +50,8 @@ class RingLaserConfig:
     ase_max_nm: float = 1575.0
     ase_points: int = 2**8
     rep_rate_hz: float = 40e6
+    derive_rep_rate: bool = True
+    group_index: float = 1.468
     sa_mod_depth: float = 0.3
     sa_sat_power_w: float = 300.0
     seed_from_noise: bool = True
@@ -64,6 +66,22 @@ class RingLaserResult:
     time_evolution: np.ndarray = field(default_factory=lambda: np.array([]))
     spectral_evolution: np.ndarray = field(default_factory=lambda: np.array([]))
     pulse_energy_nj: np.ndarray = field(default_factory=lambda: np.array([]))
+    rep_rate_hz: float = 0.0
+    cavity_length_m: float = 0.0
+
+
+# Speed of light (m/s).
+_C = 299792458.0
+
+
+def cavity_rep_rate(config: "RingLaserConfig") -> float:
+    """Fundamental repetition rate from the round-trip time of the cavity.
+
+    f_rep = c / (n_g * L_cavity), where L_cavity is the total fibre length and
+    n_g is the group index of the fibre (~1.468 for silica near 1550 nm).
+    """
+    cavity_length = config.active_length_m + config.passive_length_m
+    return _C / (config.group_index * cavity_length)
 
 
 def _build_components(g, config: RingLaserConfig, rep_rate: float):
@@ -111,12 +129,15 @@ def run_ring_laser(config: RingLaserConfig) -> RingLaserResult:
         config.grid_points, config.central_wl_nm * 1e-9,
         config.max_wl_nm * 1e-9)
 
+    rep_rate = cavity_rep_rate(config) if config.derive_rep_rate \
+        else config.rep_rate_hz
+
     if config.seed_from_noise:
         peak_power = [1e-6, 1e-9]
     else:
         peak_power = [50.0, 0.05]
     seed = pulse_mod.pulse(
-        200e-15, peak_power, "Gauss", config.rep_rate_hz, g)
+        200e-15, peak_power, "Gauss", rep_rate, g)
 
     components = _build_components(g, config, seed.repetition_rate)
 
@@ -157,4 +178,6 @@ def run_ring_laser(config: RingLaserConfig) -> RingLaserResult:
         time_evolution=np.asarray(time_evolution),
         spectral_evolution=np.asarray(spectral_evolution),
         pulse_energy_nj=np.asarray(pulse_energy_nj),
+        rep_rate_hz=rep_rate,
+        cavity_length_m=config.active_length_m + config.passive_length_m,
     )

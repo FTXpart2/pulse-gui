@@ -21,7 +21,9 @@ from pulse_gui.pulse_shapes import (
 from pulse_gui.simulation import (
     FIBRE_OPTIONS, SimulationConfig, SimulationResult, run_simulation)
 from pulse_gui.mode_locked_simulation import (
-    ER_FIBRES, RingLaserConfig, RingLaserResult, run_ring_laser)
+    ER_FIBRES, RingLaserConfig, RingLaserResult, run_ring_laser,
+    cavity_rep_rate)
+from pulse_gui import advisor
 
 
 TIME_AXIS_LIMITS = (-25.0, 25.0)
@@ -83,10 +85,112 @@ class SimulationWorker(QtCore.QThread):
             self.error.emit(traceback.format_exc())
 
 
+class AutotuneWorker(QtCore.QThread):
+    progress = QtCore.pyqtSignal(str)
+    finished = QtCore.pyqtSignal(object)
+    error = QtCore.pyqtSignal(str)
+
+    def __init__(self, base_config, target_pulses):
+        super().__init__()
+        self.base_config = base_config
+        self.target_pulses = target_pulses
+        self._cancel = False
+
+    def cancel(self):
+        self._cancel = True
+
+    def run(self):
+        try:
+            from pulse_gui.autotune import autotune_pump
+            result = autotune_pump(
+                self.base_config, self.target_pulses,
+                progress_cb=self.progress.emit,
+                cancel_cb=lambda: self._cancel)
+            self.finished.emit(result)
+        except Exception:
+            self.error.emit(traceback.format_exc())
+
+
 class PlotCanvas(FigureCanvas):
     def __init__(self, width=7, height=6):
         self.figure = Figure(figsize=(width, height), tight_layout=True)
         super().__init__(self.figure)
+
+
+class CalibrationDialog(QtWidgets.QDialog):
+    """Enter measured cavity / model values to match a real setup."""
+
+    def __init__(self, calib: dict, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Cavity / Model Calibration")
+        self.setMinimumWidth(380)
+        form = QtWidgets.QFormLayout(self)
+
+        intro = QtWidgets.QLabel(
+            "Set physical/numerical values to match your real device. "
+            "These feed the simulation grid, gain band, and repetition rate.")
+        intro.setWordWrap(True)
+        form.addRow(intro)
+
+        self.ng_spin = QtWidgets.QDoubleSpinBox()
+        self.ng_spin.setRange(1.0, 2.0)
+        self.ng_spin.setDecimals(4)
+        self.ng_spin.setSingleStep(0.001)
+        self.ng_spin.setValue(calib["group_index"])
+        form.addRow("Fiber group index n_g:", self.ng_spin)
+
+        self.cwl_spin = QtWidgets.QDoubleSpinBox()
+        self.cwl_spin.setRange(900.0, 2000.0)
+        self.cwl_spin.setSuffix(" nm")
+        self.cwl_spin.setValue(calib["central_wl_nm"])
+        form.addRow("Center wavelength:", self.cwl_spin)
+
+        self.maxwl_spin = QtWidgets.QDoubleSpinBox()
+        self.maxwl_spin.setRange(1600.0, 4000.0)
+        self.maxwl_spin.setSuffix(" nm")
+        self.maxwl_spin.setValue(calib["max_wl_nm"])
+        form.addRow("Grid max wavelength:", self.maxwl_spin)
+
+        self.pumpwl_spin = QtWidgets.QDoubleSpinBox()
+        self.pumpwl_spin.setRange(800.0, 1500.0)
+        self.pumpwl_spin.setSuffix(" nm")
+        self.pumpwl_spin.setValue(calib["pump_wavelength_nm"])
+        form.addRow("Pump wavelength:", self.pumpwl_spin)
+
+        self.asemin_spin = QtWidgets.QDoubleSpinBox()
+        self.asemin_spin.setRange(900.0, 1600.0)
+        self.asemin_spin.setSuffix(" nm")
+        self.asemin_spin.setValue(calib["ase_min_nm"])
+        form.addRow("Gain/ASE band min:", self.asemin_spin)
+
+        self.asemax_spin = QtWidgets.QDoubleSpinBox()
+        self.asemax_spin.setRange(1000.0, 1700.0)
+        self.asemax_spin.setSuffix(" nm")
+        self.asemax_spin.setValue(calib["ase_max_nm"])
+        form.addRow("Gain/ASE band max:", self.asemax_spin)
+
+        self.grid_combo = QtWidgets.QComboBox()
+        self._grid_options = [2 ** n for n in (10, 11, 12, 13)]
+        self.grid_combo.addItems([str(g) for g in self._grid_options])
+        self.grid_combo.setCurrentText(str(calib["grid_points"]))
+        form.addRow("Grid points:", self.grid_combo)
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        form.addRow(buttons)
+
+    def values(self) -> dict:
+        return {
+            "group_index": self.ng_spin.value(),
+            "central_wl_nm": self.cwl_spin.value(),
+            "max_wl_nm": self.maxwl_spin.value(),
+            "pump_wavelength_nm": self.pumpwl_spin.value(),
+            "ase_min_nm": self.asemin_spin.value(),
+            "ase_max_nm": self.asemax_spin.value(),
+            "grid_points": int(self.grid_combo.currentText()),
+        }
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -98,6 +202,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._evolution: Evolution | None = None
         self._worker: SimulationWorker | None = None
+        _defaults = RingLaserConfig()
+        self._calib = {
+            "group_index": _defaults.group_index,
+            "central_wl_nm": _defaults.central_wl_nm,
+            "max_wl_nm": _defaults.max_wl_nm,
+            "pump_wavelength_nm": _defaults.pump_wavelength_nm,
+            "ase_min_nm": _defaults.ase_min_nm,
+            "ase_max_nm": _defaults.ase_max_nm,
+            "grid_points": _defaults.grid_points,
+        }
         self._anim_timer = QtCore.QTimer(self)
         self._anim_timer.timeout.connect(self._advance_animation)
         self._anim_index = 0
@@ -110,6 +224,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # ------------------------------------------------------------------ UI
     def _build_ui(self):
+        menu = self.menuBar().addMenu("&Tools")
+        calib_action = menu.addAction("Cavity / Model Calibration…")
+        calib_action.triggered.connect(self._open_calibration)
+
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
         layout = QtWidgets.QHBoxLayout(central)
@@ -173,14 +291,64 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.evo_canvas = PlotCanvas(width=7, height=6)
         self.evo_ax = self.evo_canvas.figure.add_subplot(111, projection="3d")
+        self._evo_cbar = None
         self.tabs.addTab(self.evo_canvas, "Evolution (3D)")
 
         layout.addWidget(self.tabs, stretch=1)
+
+        self._build_advisor_panel()
 
         self.progress = QtWidgets.QProgressBar()
         self.progress.setRange(0, 0)
         self.progress.setVisible(False)
         self.statusBar().addPermanentWidget(self.progress)
+
+    def _build_advisor_panel(self):
+        dock = QtWidgets.QDockWidget("Suggestions Advisor", self)
+        dock.setFeatures(
+            QtWidgets.QDockWidget.DockWidgetMovable
+            | QtWidgets.QDockWidget.DockWidgetFloatable)
+        panel = QtWidgets.QWidget()
+        panel.setMinimumWidth(300)
+        v = QtWidgets.QVBoxLayout(panel)
+
+        intro = QtWidgets.QLabel(
+            "Pick what you want and get parameter suggestions for the "
+            "current mode.")
+        intro.setWordWrap(True)
+        v.addWidget(intro)
+
+        v.addWidget(QtWidgets.QLabel("Goal:"))
+        self.goal_combo = QtWidgets.QComboBox()
+        v.addWidget(self.goal_combo)
+
+        self.advisor_text = QtWidgets.QTextEdit()
+        self.advisor_text.setReadOnly(True)
+        v.addWidget(self.advisor_text, stretch=1)
+
+        self.apply_suggestion_btn = QtWidgets.QPushButton(
+            "Apply suggested values")
+        v.addWidget(self.apply_suggestion_btn)
+
+        # Auto-tune (closed-loop search) - ring laser only.
+        self.autotune_box = QtWidgets.QGroupBox("Auto-tune (ring laser)")
+        at = QtWidgets.QFormLayout(self.autotune_box)
+        self.autotune_target_spin = QtWidgets.QSpinBox()
+        self.autotune_target_spin.setRange(1, 10)
+        self.autotune_target_spin.setValue(1)
+        at.addRow("Target # pulses:", self.autotune_target_spin)
+        self.autotune_btn = QtWidgets.QPushButton("Auto-tune pump power")
+        at.addRow(self.autotune_btn)
+        self.autotune_log = QtWidgets.QTextEdit()
+        self.autotune_log.setReadOnly(True)
+        self.autotune_log.setMaximumHeight(150)
+        at.addRow(self.autotune_log)
+        v.addWidget(self.autotune_box)
+
+        dock.setWidget(panel)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        self._current_changes = {}
+        self._autotune_worker = None
 
     def _build_passive_controls(self):
         self.passive_box = QtWidgets.QGroupBox("Passive Fiber Parameters")
@@ -234,20 +402,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.active_len_spin = QtWidgets.QDoubleSpinBox()
         self.active_len_spin.setRange(0.05, 5.0)
-        self.active_len_spin.setValue(0.5)
+        self.active_len_spin.setValue(0.25)
         self.active_len_spin.setSuffix(" m")
         self.active_len_spin.setDecimals(2)
+        self.active_len_spin.setSingleStep(0.05)
 
         self.passive_len_spin = QtWidgets.QDoubleSpinBox()
         self.passive_len_spin.setRange(0.1, 50.0)
-        self.passive_len_spin.setValue(10.0)
+        self.passive_len_spin.setValue(5.0)
         self.passive_len_spin.setSuffix(" m")
 
         self.pump_spin = QtWidgets.QDoubleSpinBox()
         self.pump_spin.setRange(0.0, 5.0)
-        self.pump_spin.setValue(0.6)
+        self.pump_spin.setDecimals(3)
+        self.pump_spin.setSingleStep(0.005)
+        self.pump_spin.setValue(0.040)
         self.pump_spin.setSuffix(" W")
-        self.pump_spin.setDecimals(2)
 
         self.tap_spin = QtWidgets.QDoubleSpinBox()
         self.tap_spin.setRange(1.0, 90.0)
@@ -271,14 +441,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.round_trips_spin = QtWidgets.QSpinBox()
         self.round_trips_spin.setRange(2, 1000)
-        self.round_trips_spin.setValue(60)
+        self.round_trips_spin.setValue(250)
 
         self.noise_check = QtWidgets.QCheckBox("Start from noise")
         self.noise_check.setChecked(True)
 
+        self.rep_rate_label = QtWidgets.QLabel("—")
+        self.rep_rate_label.setStyleSheet("color: #2a7;")
+
         form.addRow("Er fiber:", self.er_combo)
         form.addRow("Active length:", self.active_len_spin)
         form.addRow("Passive length:", self.passive_len_spin)
+        form.addRow("Est. rep. rate:", self.rep_rate_label)
         form.addRow("Pump power:", self.pump_spin)
         form.addRow("Output tap:", self.tap_spin)
         form.addRow("Bandpass T:", self.bandpass_spin)
@@ -290,7 +464,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _connect_signals(self):
         self.mode_combo.currentIndexChanged.connect(self._on_mode_changed)
+        self.goal_combo.currentIndexChanged.connect(self._refresh_suggestions)
+        self.apply_suggestion_btn.clicked.connect(self._apply_suggestion)
+        self.active_len_spin.valueChanged.connect(self._update_rep_rate_label)
+        self.passive_len_spin.valueChanged.connect(self._update_rep_rate_label)
+        self.autotune_btn.clicked.connect(self._start_autotune)
         self.preview_btn.clicked.connect(self.update_input_preview)
+        self._update_rep_rate_label()
         self.run_btn.clicked.connect(self.start_simulation)
         self.play_btn.clicked.connect(self.toggle_animation)
         self.stop_btn.clicked.connect(self.stop_animation)
@@ -311,12 +491,141 @@ class MainWindow(QtWidgets.QMainWindow):
         self.passive_box.setVisible(is_passive)
         self.ring_box.setVisible(not is_passive)
         self.preview_btn.setEnabled(is_passive)
+        self.autotune_box.setVisible(not is_passive)
+        self._populate_goals()
         if is_passive:
             self.update_input_preview()
         else:
             self.status_label.setText(
                 "Ring laser mode: set parameters and Run. Reaching a stable "
                 "mode-locked pulse can require tuning and many round trips.")
+
+    def _open_calibration(self):
+        dialog = CalibrationDialog(self._calib, self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self._calib = dialog.values()
+            self._update_rep_rate_label()
+            self.status_label.setText(
+                "Calibration updated. New values apply on the next Run.")
+
+    def _update_rep_rate_label(self):
+        cfg = RingLaserConfig(
+            active_length_m=self.active_len_spin.value(),
+            passive_length_m=self.passive_len_spin.value(),
+            group_index=self._calib["group_index"])
+        f = cavity_rep_rate(cfg)
+        self.rep_rate_label.setText(
+            f"{f / 1e6:.1f} MHz  (cavity {cfg.active_length_m + cfg.passive_length_m:.2f} m)")
+
+    # -------------------------------------------------------------- advisor
+    def _populate_goals(self):
+        goals = advisor.GOALS[self._mode()]
+        self.goal_combo.blockSignals(True)
+        self.goal_combo.clear()
+        self.goal_combo.addItems(goals)
+        self.goal_combo.blockSignals(False)
+        self._refresh_suggestions()
+
+    def _widget_for_key(self):
+        return {
+            "active_length_m": self.active_len_spin,
+            "passive_length_m": self.passive_len_spin,
+            "pump_power_w": self.pump_spin,
+            "round_trips": self.round_trips_spin,
+            "sa_mod_depth": self.sa_depth_spin,
+            "sa_sat_power_w": self.sa_satp_spin,
+            "bandpass_transmission": self.bandpass_spin,
+            "output_tap_percent": self.tap_spin,
+            "width_fs": self.width_spin,
+            "amplitude_w": self.amplitude_spin,
+            "fibre_length_m": self.length_spin,
+            "fibre_name": self.fibre_combo,
+            "shape": self.shape_combo,
+        }
+
+    def _current_value(self, key):
+        widget = self._widget_for_key().get(key)
+        if widget is None:
+            return None
+        if isinstance(widget, QtWidgets.QComboBox):
+            return widget.currentText()
+        return widget.value()
+
+    def _refresh_suggestions(self):
+        goal = self.goal_combo.currentText()
+        if not goal:
+            return
+        sugg = advisor.suggest(self._mode(), goal)
+        self._current_changes = dict(sugg.changes)
+
+        lines = [
+            f"<b>Goal:</b> {goal}",
+            f"<p>{sugg.summary}</p>",
+            "<b>Suggested changes</b><ul>",
+        ]
+        for key, target in sugg.changes.items():
+            current = self._current_value(key)
+            lines.append("<li>" + advisor.format_change(key, target, current)
+                         + "</li>")
+        lines.append("</ul>")
+        lines.append(f"<b>Why:</b><br>{sugg.reasoning}")
+        self.advisor_text.setHtml("\n".join(lines))
+
+    def _apply_suggestion(self):
+        mapping = self._widget_for_key()
+        for key, target in self._current_changes.items():
+            widget = mapping.get(key)
+            if widget is None:
+                continue
+            if isinstance(widget, QtWidgets.QComboBox):
+                idx = widget.findText(str(target))
+                if idx >= 0:
+                    widget.setCurrentIndex(idx)
+            else:
+                widget.setValue(target)
+        self._refresh_suggestions()
+        self.status_label.setText(
+            "Applied suggested values. Click Run to simulate.")
+
+    # ------------------------------------------------------------- autotune
+    def _start_autotune(self):
+        if self._autotune_worker and self._autotune_worker.isRunning():
+            self._autotune_worker.cancel()
+            self.autotune_btn.setText("Auto-tune pump power")
+            return
+        target = self.autotune_target_spin.value()
+        base = self._ring_config()
+        self.autotune_log.clear()
+        self.autotune_log.append(
+            f"Searching for pump power giving {target} pulse(s)...\n"
+            f"(each step runs a full simulation; this takes a few minutes)")
+        self.autotune_btn.setText("Cancel auto-tune")
+        self.run_btn.setEnabled(False)
+
+        self._autotune_worker = AutotuneWorker(base, target)
+        self._autotune_worker.progress.connect(self._on_autotune_progress)
+        self._autotune_worker.finished.connect(self._on_autotune_done)
+        self._autotune_worker.error.connect(self._on_autotune_error)
+        self._autotune_worker.start()
+
+    def _on_autotune_progress(self, message: str):
+        self.autotune_log.append(message)
+
+    def _on_autotune_done(self, result):
+        self.autotune_btn.setText("Auto-tune pump power")
+        self.run_btn.setEnabled(True)
+        self.pump_spin.setValue(result.found_pump_w)
+        verdict = "SUCCESS" if result.success else "closest match"
+        self.autotune_log.append(
+            f"\n{verdict}: pump = {result.found_pump_w:.3f} W -> "
+            f"{result.found_count} pulse(s), "
+            f"{result.found_energy_nj:.4f} nJ.\nPump field updated; click Run.")
+        self._refresh_suggestions()
+
+    def _on_autotune_error(self, message: str):
+        self.autotune_btn.setText("Auto-tune pump power")
+        self.run_btn.setEnabled(True)
+        self.autotune_log.append("\nAuto-tune error:\n" + message)
 
     def _passive_config(self):
         params = PulseParams(
@@ -341,7 +650,14 @@ class MainWindow(QtWidgets.QMainWindow):
             sa_mod_depth=self.sa_depth_spin.value(),
             sa_sat_power_w=self.sa_satp_spin.value(),
             round_trips=self.round_trips_spin.value(),
-            seed_from_noise=self.noise_check.isChecked())
+            seed_from_noise=self.noise_check.isChecked(),
+            group_index=self._calib["group_index"],
+            central_wl_nm=self._calib["central_wl_nm"],
+            max_wl_nm=self._calib["max_wl_nm"],
+            pump_wavelength_nm=self._calib["pump_wavelength_nm"],
+            ase_min_nm=self._calib["ase_min_nm"],
+            ase_max_nm=self._calib["ase_max_nm"],
+            grid_points=self._calib["grid_points"])
 
     # ------------------------------------------------------------- preview
     def update_input_preview(self):
@@ -502,6 +818,9 @@ class MainWindow(QtWidgets.QMainWindow):
             loc="upper right", fontsize=8)
 
     def _plot_evolution_3d(self, evo: Evolution):
+        if self._evo_cbar is not None:
+            self._evo_cbar.remove()
+            self._evo_cbar = None
         self.evo_ax.clear()
         t = evo.time_ps
         steps = evo.steps
@@ -523,6 +842,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.evo_ax.set_ylabel(ylabel)
         self.evo_ax.set_zlabel("Power (W)")
         self.evo_ax.set_title("Pulse Evolution")
-        self.evo_canvas.figure.colorbar(
+        self._evo_cbar = self.evo_canvas.figure.colorbar(
             surf, ax=self.evo_ax, shrink=0.6, pad=0.1)
         self.evo_canvas.draw()
