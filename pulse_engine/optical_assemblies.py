@@ -16,9 +16,9 @@ from abc import ABC
 from matplotlib.figure import Figure
 from matplotlib.colors import LogNorm, Normalize
 
-import pyLaserPulse.utils as utils
-import pyLaserPulse.base_components as bc
-import pyLaserPulse.coupling as coupling
+import pulse_engine.utils as utils
+import pulse_engine.base_components as bc
+import pulse_engine.coupling as coupling
 
 
 class assembly(ABC):
@@ -33,7 +33,7 @@ class assembly(ABC):
         """
         Parameters
         ----------
-        grid : pyLaserPulse grid object.
+        grid : pulse_engine grid object.
         components : list of component objects.
         name : str.
             String identifier for the assembly object.
@@ -197,7 +197,7 @@ class assembly(ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
         field : numpy array.
             Field to use for calculations and plots. This will generally either
             be pulse.field, or pulse.output.
@@ -240,7 +240,7 @@ class assembly(ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
         """
         handles = []
         colours = ['mediumpurple', 'seagreen']
@@ -285,7 +285,7 @@ class assembly(ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
         """
         B = np.asarray(pulse.high_res_B_integral_samples).T
 
@@ -312,7 +312,7 @@ class assembly(ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
         """
         energy_samples = np.asarray(np.abs(pulse.high_res_field_samples)**2).T
         energy_samples = np.sum(energy_samples, axis=1)
@@ -356,7 +356,7 @@ class assembly(ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
         """
         time_samples = np.sum(np.abs(pulse.high_res_field_samples)**2, axis=1)
         pulse.get_ESD_and_PSD_from_high_res_field_samples(self.grid)
@@ -406,7 +406,7 @@ class assembly(ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
         """
         min_y = 1e-6
         handles = []

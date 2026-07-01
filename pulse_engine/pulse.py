@@ -15,7 +15,7 @@ import numpy as np
 import scipy.constants as const
 from itertools import combinations
 
-import pyLaserPulse.utils as utils
+import pulse_engine.utils as utils
 
 
 def complex_first_order_degree_of_coherence(
@@ -26,7 +26,7 @@ def complex_first_order_degree_of_coherence(
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     pulse_objects : iterable (list, tuple, etc) of pulse objects.
     decimate : bool
         The complex first-order degree of coherence calculation is memory
@@ -80,7 +80,7 @@ class _pulse_base(ABC):
         """
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         repetition_rate : float
             Repetition rate of the laser.
         high_res_sampling : bool
@@ -154,7 +154,7 @@ class _pulse_base(ABC):
 
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
 
         Notes
         -----
@@ -174,7 +174,7 @@ class _pulse_base(ABC):
 
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         topup : nool
             Adds OPPM noise to the full spectrum if False.
             Add OPPM noise to the spectrum only where spectrum is less than the
@@ -231,7 +231,7 @@ class _pulse_base(ABC):
 
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         field : numpy array or list
             Can be self.field or self.output
         """
@@ -253,7 +253,7 @@ class _pulse_base(ABC):
 
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object.
+        grid : pulse_engine.grid.grid object.
         spectrum : numpy array of spectral data. NOT COMPLEX.
         """
         self.energy_spectral_density, self.power_spectral_density = \
@@ -267,7 +267,7 @@ class _pulse_base(ABC):
 
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
 
         Notes
         -----
@@ -290,7 +290,7 @@ class _pulse_base(ABC):
 
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object.
+        grid : pulse_engine.grid.grid object.
         field : numpy array.
             Can be self.field or self.output.
         """
@@ -351,7 +351,7 @@ class _pulse_base(ABC):
 
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         field : numpy array
             Can be self.field or self.output
         """
@@ -474,7 +474,7 @@ class pulse(_pulse_base):
             "Gauss" or "sech"
         repetition_rate : float
             Repetition rate of the laser.
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         order : even integer
             If pulse_shape == 'Gauss', this is the supergaussian order (>= 1)
         chirp : float
@@ -522,7 +522,7 @@ class pulse(_pulse_base):
 
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         pulse_shape : str
             'Gauss', 'sech'
         P_0 : list of floats
@@ -584,7 +584,7 @@ class pulse_from_measured_PSD(_pulse_base):
         """
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         spectrum_file : str
             Absolute path to the file containing the spectral data.
             This file must have a header file_header_length lines long.
@@ -652,11 +652,11 @@ class pulse_from_measured_PSD(_pulse_base):
         self.field = self.field.T
 
 
-class pulse_from_pyLaserPulse_simulation(_pulse_base):
+class pulse_from_saved_simulation(_pulse_base):
     """
     Laser pulse class.
 
-    Define a laser pulse using data output by a pyLaserPulse simulation.
+    Define a laser pulse using data output by a pulse_engine simulation.
     """
 
     def __init__(self, grid, data_directory, high_res_sampling=False,
@@ -665,10 +665,10 @@ class pulse_from_pyLaserPulse_simulation(_pulse_base):
         """
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         data_directory : str
             Absolute path of directory containing pulse.npz data file produced
-            by a previous pyLaserPulse simulation.
+            by a previous pulse_engine simulation.
         high_res_sampling : bool
             If True, propagation information is saved at intervals throughout
             the propagation.
@@ -752,7 +752,7 @@ class pulse_from_text_data(_pulse_base):
         """
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         file : str
             Absolute path of the text file containing the pulse amplitude data.
             This must be tab delimited with the following format with no
@@ -817,7 +817,7 @@ class pulse_from_numpy_array(_pulse_base):
         """
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         pulse_array : numpy array
             Shape of the intensity profile of the pulse in the time domain.
             Doesn't need to be normalized. Must be 1D and of len grid.points.

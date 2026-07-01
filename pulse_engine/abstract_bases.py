@@ -15,12 +15,12 @@ import numpy as np
 import scipy.interpolate as interp
 import scipy.constants as const
 
-import pyLaserPulse.utils as utils
-import pyLaserPulse.bessel_mode_solver as bms
-import pyLaserPulse.pulse as pls
-import pyLaserPulse.pump as pmp
-import pyLaserPulse.exceptions as exc
-# import pyLaserPulse.sys_info as si
+import pulse_engine.utils as utils
+import pulse_engine.bessel_mode_solver as bms
+import pulse_engine.pulse as pls
+import pulse_engine.pump as pmp
+import pulse_engine.exceptions as exc
+# import pulse_engine.sys_info as si
 
 
 class fibre_base(ABC):
@@ -41,15 +41,15 @@ class fibre_base(ABC):
         Parameters
         ----------
         g : grid.
-            pyLaserPulse.grid.grid object.
+            pulse_engine.grid.grid object.
         length : float.
             Fibre length in m.
         loss_file : string.
             Absolute path to file containing fibre loss data. See
-            pyLaserPulse.data.paths.materials.loss_spectra
+            pulse_engine.data.paths.materials.loss_spectra
         Raman_file : string.
             Absoltue path to file containing Raman response data.
-            Recommend pyLaserPulse.data.paths.materials.Raman_profiles
+            Recommend pulse_engine.data.paths.materials.Raman_profiles
         beat_length : float.
             Polarization beat length in m.
         n2 : float.
@@ -544,12 +544,12 @@ class fibre_base(ABC):
         Parameters
         ----------
         pulse : pulse class.
-            Object of type pyLaserPulse.pulse.pulse.
+            Object of type pulse_engine.pulse.pulse.
 
         Returns
         -------
         pulse
-            Object of type pyLaserPulse.pulse.pulse.
+            Object of type pulse_engine.pulse.pulse.
         """
         if pulse.high_res_samples:
             pulse.field, pulse.dz, samples, self.dz_samples \
@@ -579,12 +579,12 @@ class active_fibre_base(ABC):
     an active fibre, which can be done using multiple inheritance as long as
     the method resolution order is:
 
-    <class 'pyLaserPulse.abstract_bases.active_fibre_base'> followed by
+    <class 'pulse_engine.abstract_bases.active_fibre_base'> followed by
     inheritance of type
-    <class 'pyLaserPulse.abstract_bases.fibre_base'>, which can be from the
+    <class 'pulse_engine.abstract_bases.fibre_base'>, which can be from the
     base_components module, such as:
-    <class 'pyLaserPulse.base_components.step_index_passive_fibre'> or
-    <class 'pyLaserPulse.base_components.photonic_crystal_passive_fibre'>.
+    <class 'pulse_engine.base_components.step_index_passive_fibre'> or
+    <class 'pulse_engine.base_components.photonic_crystal_passive_fibre'>.
     """
     class stacker:
         """Class for storing stacked arrays used in full ASE simulations."""
@@ -600,7 +600,7 @@ class active_fibre_base(ABC):
         Parameters
         ----------
         g : grid.
-            pyLaserPulse.grid.grid object.
+            pulse_engine.grid.grid object.
         N_ions : float
             Rare-earth ion number density in m^-3
         cross_section_file : string.
@@ -616,7 +616,7 @@ class active_fibre_base(ABC):
         Sellmeier_file : string.
             Absolute path to file containing Sellmeier coefficients for the
             fibre material.
-            See pyLaserPulse.data.paths.materials.Sellmeier_coefficients.
+            See pulse_engine.data.paths.materials.Sellmeier_coefficients.
         lifetime : float
             Upper-state lifetime of the rare-earth dopant in s.
         cladding_pumping : bool
@@ -2264,7 +2264,7 @@ class active_fibre_base(ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse
+        pulse : pulse_engine.pulse.pulse
         pulse_field : numpy array
             pulse.field
         dz : float
@@ -2272,7 +2272,7 @@ class active_fibre_base(ABC):
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse
+        pulse_engine.pulse.pulse
         """
         if pulse.high_res_samples:
             pass
@@ -2290,11 +2290,11 @@ class active_fibre_base(ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse
+        pulse : pulse_engine.pulse.pulse
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse
+        pulse_engine.pulse.pulse
 
         Raises
         ------
@@ -2595,7 +2595,7 @@ class component_base(loss_spectrum_base, ABC):
         beamsplitting : float
             Intensity fraction remaining in pulse.field if output coupler
             and coupler_type="beamsplitter"
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         crosstalk : float
             Polarization degradation caused by the component.
         order : int
@@ -2864,11 +2864,11 @@ class component_base(loss_spectrum_base, ABC):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse
+        pulse : pulse_engine.pulse.pulse
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse
+        pulse_engine.pulse.pulse
 
         Notes
         -----
@@ -3021,7 +3021,7 @@ class coupling_transmission_base(loss_spectrum_base):
         """
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object.
+        grid : pulse_engine.grid.grid object.
         """
         super().__init__()
         self.grid = grid
@@ -3043,11 +3043,11 @@ class coupling_transmission_base(loss_spectrum_base):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse
+        pulse : pulse_engine.pulse.pulse
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse
+        pulse_engine.pulse.pulse
         """
         spectrum = utils.fft(pulse.field)
         trans_spectrum = self._include_partition_noise(pulse.photon_spectrum)

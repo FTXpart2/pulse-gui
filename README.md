@@ -171,7 +171,7 @@ single executable with [PyInstaller](https://pyinstaller.org/):
 # inside the activated virtual environment
 pip install pyinstaller
 pyinstaller --noconfirm --windowed --name pulse-gui ^
-  --add-data "pyLaserPulse;pyLaserPulse" ^
+  --add-data "pulse_engine;pulse_engine" ^
   run_pulse_gui.py
 ```
 
@@ -244,15 +244,17 @@ a chosen goal automatically.
 ## Project layout
 
 ```
-pulse_gui/                      # the GUI application
+pulse_gui/                      # the GUI application (Pulse-UI)
 ├── __main__.py                 # `python -m pulse_gui` entry point
 ├── main_window.py              # PyQt5 GUI, advisor, auto-tune, calibration
 ├── pulse_shapes.py             # Gaussian / Soliton / Square generation
+├── pulse_metrics.py            # FWHM, spectrum width, Gaussian / Sech² fitting
 ├── simulation.py               # passive single-pass fiber propagation
 ├── mode_locked_simulation.py   # Er-doped ring laser backend + rep-rate model
 ├── saturable_absorber.py       # custom fast saturable absorber
 ├── advisor.py                  # rule-based parameter suggestions
 └── autotune.py                 # closed-loop pump-power search
+pulse_engine/                   # bundled GNLSE / fibre-laser physics engine
 experiments/                    # reproducible parameter-study scripts + figures
 run_pulse_gui.py                # launcher
 launch_gui.bat                  # Windows double-click launcher

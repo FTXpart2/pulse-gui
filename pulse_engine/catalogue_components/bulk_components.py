@@ -10,9 +10,9 @@ Module of classes for branded bulk components.
 
 import numpy as np
 
-from pyLaserPulse.data import paths
-import pyLaserPulse.base_components as bc
-import pyLaserPulse.utils as utils
+from pulse_engine.data import paths
+import pulse_engine.base_components as bc
+import pulse_engine.utils as utils
 
 
 class half_wave_plate(bc.component):
@@ -22,7 +22,7 @@ class half_wave_plate(bc.component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     lambda_c : float
         Central wavelength of the transmission window in m
     angle : float
@@ -46,7 +46,7 @@ class quarter_wave_plate(bc.component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     lambda_c : float
         Central wavelength of the transmission window in m
     angle : float
@@ -69,7 +69,7 @@ class Thorlabs_broadband_PBS(bc.component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     lambda_c : float
         Central wavelength of the transmission window in m
     output_coupler : bool
@@ -95,7 +95,7 @@ class Thorlabs_Laserline_bandpass(bc.component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     transmission_bandwidth : float
         Transmission window FWHM in m.
     lambda_c : float
@@ -121,7 +121,7 @@ class Andover_155FS10_25_bandpass(bc.component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     peak_transmission : float
         Peak of transmission window. The measured data from the Andover website
         (component_loss_profiles/Andover_155FS10_25_bandpass) is usually
@@ -152,7 +152,7 @@ class AA_Optoelectronic_AOM_MT200_A02_980_1100(bc.pulse_picker):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     time_open : float
         Time in s that the pulse picker is 'open', i.e., lets light through
         Cannot be less than 20 ns (specified rise time of 10 ns).

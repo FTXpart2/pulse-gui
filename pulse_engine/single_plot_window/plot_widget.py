@@ -9,7 +9,7 @@
 
 from PyQt5 import QtCore, QtWidgets
 
-from pyLaserPulse.single_plot_window.mplwidget import MplWidget
+from pulse_engine.single_plot_window.mplwidget import MplWidget
 
 
 class Ui_MainWindow(object):

@@ -219,9 +219,9 @@ def load_Raman(filename, time_window, dt):
     filename : string
         Absolute path to the Raman data file.
     time_window : numpy array
-        pyLaserPulse.grid.grid.time_window
+        pulse_engine.grid.grid.time_window
     dt : float
-        Resolution of time_window (pyLaserPulse.grid.grid.dt)
+        Resolution of time_window (pulse_engine.grid.grid.dt)
 
     Returns
     numpy array
@@ -256,7 +256,7 @@ def load_cross_sections(filename, delimiter, axis, axis_scale,
         Delimiter used in the cross section data file
     axis : numpy array
         New wavelength axis to interpolate the data onto.
-        See pyLaserPulse.grid.grid.lambda_window
+        See pulse_engine.grid.grid.lambda_window
     axis_scale : float
         Scaling for the interpolation axis
     interp_kind
@@ -314,9 +314,9 @@ def load_target_power_spectral_density(energy, repetition_rate, filename, axis,
     axis : numpy array
         Axis onto which the data in filename is interpolated.
         If the data is given as a function of wavelength in the data file, use
-        pyLaserPulse.grid.grid.lambda_window
+        pulse_engine.grid.grid.lambda_window
         If the data is given as a function of angular frequency in the data
-        file, use pyLaserPulse.grid.grid.omega_window.
+        file, use pulse_engine.grid.grid.omega_window.
     d_axis : numpy array
         Resolution of axis
     axis_scale : float
@@ -353,7 +353,7 @@ def get_ESD_and_PSD(lambda_window, spectrum, repetition_rate):
     Parameters
     ----------
     lambda_window : numpy array
-        Wavelength grid in m. See pyLaserPulse.grid.grid.lambda_window
+        Wavelength grid in m. See pulse_engine.grid.grid.lambda_window
     spectrum : numpy array
         Spectral data
     repetition_rate : float
@@ -380,7 +380,7 @@ def Sellmeier(lambda_window, f):
     Parameters
     ----------
     lambda_window : numpy array
-        Wavelength grid in m. See pyLaserPulse.grid.grid.lambda_window
+        Wavelength grid in m. See pulse_engine.grid.grid.lambda_window
     f : string
         Absolute path to file containing Sellmeier coefficients.
 
@@ -430,13 +430,13 @@ def PCF_propagation_parameters_K_Saitoh(
     Parameters
     ----------
     lambda_window : numpy array
-        Wavelength grid in m. See pyLaserPulse.grid.grid.lambda_window
+        Wavelength grid in m. See pulse_engine.grid.grid.lambda_window
     grid_midpoint : int
         Middle index of the time-frequency grid.
-        See pyLaserPulse.grid.grid.midpoint
+        See pulse_engine.grid.grid.midpoint
     omega_window : numpy array
         Angular frequency grid in rad Hz.
-        See pyLaserPulse.grid.grid.omega_window
+        See pulse_engine.grid.grid.omega_window
     a : numpy array
         4x4 array. See reference in notes (K. Saitoh)
     b : numpy array
@@ -454,7 +454,7 @@ def PCF_propagation_parameters_K_Saitoh(
         Appriximate core radius in m
     Sellmeier_file : string
         Absolute path to the Sellmeier coefficients.
-        See pyLaserPulse.data.paths.materials.Sellmeier_coefficients.
+        See pulse_engine.data.paths.materials.Sellmeier_coefficients.
 
     Returns
     -------
@@ -551,7 +551,7 @@ def Taylor_expansion(coeffs, axis, axis_centre=0):
     Notes
     -----
     For retrieving Taylor coefficients for dispersion curves, see
-    pyLaserPulse.utils.get_Taylor_coeffs_from_beta2.
+    pulse_engine.utils.get_Taylor_coeffs_from_beta2.
     """
     TE = np.zeros_like(axis, dtype=np.complex128)
     for i, tc in enumerate(coeffs):
@@ -569,7 +569,7 @@ def get_Taylor_coeffs_from_beta2(beta_2, grid):
     ----------
     beta_2 : numpy array
         Dispersion curve in s^2 / m
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
 
     Returns
     -------

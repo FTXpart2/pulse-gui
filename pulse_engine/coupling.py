@@ -9,8 +9,8 @@ Module of general functions for calculating propagation parameters.
 """
 import numpy as np
 
-import pyLaserPulse.abstract_bases as bases
-import pyLaserPulse.utils as utils
+import pulse_engine.abstract_bases as bases
+import pulse_engine.utils as utils
 
 
 class fibreToFibreCoupling(bases.coupling_transmission_base):

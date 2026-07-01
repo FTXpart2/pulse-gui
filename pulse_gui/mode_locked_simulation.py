@@ -1,6 +1,6 @@
 """Mode-locked Er-doped fibre ring laser simulation backend.
 
-Builds a ring cavity from pyLaserPulse catalogue components:
+Builds a ring cavity from pulse_engine catalogue components:
 
     WDM/isolator/tap -> Er active fibre -> PM1550 passive fibre
         -> saturable absorber -> bandpass filter -> (loop back)
@@ -14,14 +14,14 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-import pyLaserPulse.grid as grid_mod
-import pyLaserPulse.pulse as pulse_mod
-import pyLaserPulse.optical_assemblies as oa
-import pyLaserPulse.utils as utils
-import pyLaserPulse.catalogue_components.active_fibres as af
-import pyLaserPulse.catalogue_components.passive_fibres as pf
-import pyLaserPulse.catalogue_components.fibre_components as fc
-import pyLaserPulse.catalogue_components.bulk_components as bulk
+import pulse_engine.grid as grid_mod
+import pulse_engine.pulse as pulse_mod
+import pulse_engine.optical_assemblies as oa
+import pulse_engine.utils as utils
+import pulse_engine.catalogue_components.active_fibres as af
+import pulse_engine.catalogue_components.passive_fibres as pf
+import pulse_engine.catalogue_components.fibre_components as fc
+import pulse_engine.catalogue_components.bulk_components as bulk
 
 from pulse_gui.saturable_absorber import FastSaturableAbsorber
 
@@ -42,7 +42,11 @@ class RingLaserConfig:
     pump_wavelength_nm: float = 976.0
     output_tap_percent: float = 10.0
     bandpass_transmission: float = 0.85
-    round_trips: int = 250
+    round_trips: int = 300
+    loop_to_steady_state: bool = True
+    batch_round_trips: int = 10
+    steady_state_window: int = 25
+    steady_state_tol: float = 0.02
     grid_points: int = 2**11
     central_wl_nm: float = 1550.0
     max_wl_nm: float = 2000.0
@@ -68,6 +72,8 @@ class RingLaserResult:
     pulse_energy_nj: np.ndarray = field(default_factory=lambda: np.array([]))
     rep_rate_hz: float = 0.0
     cavity_length_m: float = 0.0
+    converged: bool = False
+    round_trips_run: int = 0
 
 
 # Speed of light (m/s).
@@ -123,11 +129,65 @@ def _field_to_spectrum(field_array, n_points):
     return np.sum(np.abs(spec) ** 2, axis=0)
 
 
+def _extract_fields(seed):
+    """Pull the tapped output field for each sampled round trip."""
+    fields = []
+    for sample in seed.output_samples:
+        if isinstance(sample, list) and len(sample) > 0:
+            fields.append(np.asarray(sample[0]))
+    return fields
+
+
+def _count_peaks(power, dt):
+    """Lightweight pulse counter used for the steady-state check.
+
+    Counts peaks above 20% of the maximum, separated by at least 1 ps, within
+    a 40 ps window around the dominant peak. Kept local to avoid importing the
+    autotune module (which imports this module)."""
+    peak = power.max()
+    if not np.isfinite(peak) or peak <= 0:
+        return 0
+    try:
+        from scipy.signal import find_peaks
+    except Exception:  # pragma: no cover - scipy always present in practice
+        return 1
+    min_sep = max(1, int(round(1e-12 / dt)))
+    peaks, _ = find_peaks(power, height=0.20 * peak, distance=min_sep)
+    return int(len(peaks)) if len(peaks) else 1
+
+
+def _is_steady_state(energies, counts, window, tol):
+    """True if pulse energy and pulse count have both settled over `window`."""
+    if len(energies) < window:
+        return False
+    recent_e = np.asarray(energies[-window:])
+    mean_e = recent_e.mean()
+    if mean_e <= 0:
+        return False
+    if recent_e.std() / mean_e > tol:
+        return False
+    recent_c = counts[-window:]
+    if len(set(recent_c)) != 1 or recent_c[-1] < 1:
+        return False
+    return True
+
+
 def run_ring_laser(config: RingLaserConfig) -> RingLaserResult:
-    """Run the mode-locked ring laser and return per-round-trip evolution."""
+    """Run the mode-locked ring laser and return per-round-trip evolution.
+
+    With ``config.loop_to_steady_state`` the cavity is propagated in batches of
+    ``batch_round_trips`` and stops automatically once the output pulse energy
+    and pulse count have settled (relative energy std over ``steady_state_window``
+    round trips below ``steady_state_tol`` and a constant pulse count), up to a
+    maximum of ``round_trips``. Otherwise a single fixed run of ``round_trips``
+    is performed.
+    """
     g = grid_mod.grid(
         config.grid_points, config.central_wl_nm * 1e-9,
         config.max_wl_nm * 1e-9)
+    dt = g.dt
+    time_ps = g.time_window * 1e12
+    wavelength_nm = g.lambda_window * 1e9
 
     rep_rate = cavity_rep_rate(config) if config.derive_rep_rate \
         else config.rep_rate_hz
@@ -141,43 +201,76 @@ def run_ring_laser(config: RingLaserConfig) -> RingLaserResult:
 
     components = _build_components(g, config, seed.repetition_rate)
 
-    laser = oa.sm_fibre_laser(
-        g, components, config.round_trips, "ring laser",
-        round_trip_output_samples=config.round_trips,
-        plot=False, verbose=config.verbose)
-
-    seed = laser.simulate(seed)
-
-    time_ps = g.time_window * 1e12
-    wavelength_nm = g.lambda_window * 1e9
-
-    fields = []
-    for sample in seed.output_samples:
-        if isinstance(sample, list) and len(sample) > 0:
-            fields.append(np.asarray(sample[0]))
-
-    if not fields:
-        fields = [seed.field]
-
     time_evolution = []
     spectral_evolution = []
     pulse_energy_nj = []
-    dt = g.dt
-    for f in fields:
-        power = np.sum(np.abs(f) ** 2, axis=0)
-        if np.any(np.isnan(power)):
-            power = np.zeros_like(power)
+    counts = []
+    converged = False
+
+    def _absorb(fields):
+        for f in fields:
+            power = np.sum(np.abs(f) ** 2, axis=0)
+            if np.any(np.isnan(power)):
+                power = np.zeros_like(power)
+            time_evolution.append(power)
+            spectral_evolution.append(
+                _field_to_spectrum(f, config.grid_points))
+            pulse_energy_nj.append(np.sum(power) * dt * 1e9)
+            counts.append(_count_peaks(power, dt))
+
+    if config.loop_to_steady_state:
+        batch = max(1, int(config.batch_round_trips))
+        window = max(2, int(config.steady_state_window))
+        max_trips = int(config.round_trips)
+        laser = oa.sm_fibre_laser(
+            g, components, batch, "ring laser",
+            round_trip_output_samples=batch, plot=False,
+            verbose=config.verbose)
+        run = 0
+        while run < max_trips:
+            this_batch = min(batch, max_trips - run)
+            laser.round_trips = this_batch
+            laser.round_trip_output_samples = this_batch
+            seed.output_samples = []
+            seed = laser.simulate(seed)
+            batch_fields = _extract_fields(seed)
+            if not batch_fields:
+                break
+            _absorb(batch_fields)
+            run += len(batch_fields)
+            if np.any(np.isnan(seed.field)):
+                break
+            if _is_steady_state(pulse_energy_nj, counts, window,
+                                config.steady_state_tol):
+                converged = True
+                break
+    else:
+        laser = oa.sm_fibre_laser(
+            g, components, config.round_trips, "ring laser",
+            round_trip_output_samples=config.round_trips,
+            plot=False, verbose=config.verbose)
+        seed = laser.simulate(seed)
+        fields = _extract_fields(seed)
+        if not fields:
+            fields = [seed.field]
+        _absorb(fields)
+
+    if not time_evolution:
+        power = np.sum(np.abs(seed.field) ** 2, axis=0)
         time_evolution.append(power)
-        spectral_evolution.append(_field_to_spectrum(f, config.grid_points))
+        spectral_evolution.append(
+            _field_to_spectrum(seed.field, config.grid_points))
         pulse_energy_nj.append(np.sum(power) * dt * 1e9)
 
     return RingLaserResult(
         time_ps=time_ps,
         wavelength_nm=wavelength_nm,
-        round_trip=np.arange(len(fields)),
+        round_trip=np.arange(len(time_evolution)),
         time_evolution=np.asarray(time_evolution),
         spectral_evolution=np.asarray(spectral_evolution),
         pulse_energy_nj=np.asarray(pulse_energy_nj),
         rep_rate_hz=rep_rate,
         cavity_length_m=config.active_length_m + config.passive_length_m,
+        converged=converged,
+        round_trips_run=len(time_evolution),
     )

@@ -14,8 +14,8 @@ import scipy.constants as const
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 
-import pyLaserPulse.abstract_bases as bases
-import pyLaserPulse.utils as utils
+import pulse_engine.abstract_bases as bases
+import pulse_engine.utils as utils
 
 
 class step_index_passive_fibre(bases.fibre_base):
@@ -37,15 +37,15 @@ class step_index_passive_fibre(bases.fibre_base):
         """
         Parameters
         ----------
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         length : float
             Fibre length in m
         loss_file : string
             Absolute path to the fibre loss as a function of wavelength.
-            See pyLaserPulse.data.paths.materials.loss_spectra
+            See pulse_engine.data.paths.materials.loss_spectra
         Raman_file : string
             Absolute path to the Raman response as a function of time.
-            See pyLaserPulse.data.paths.materials.Raman_profiles
+            See pulse_engine.data.paths.materials.Raman_profiles
         core_diam : float
             Core diameter in m
         NA : float
@@ -61,7 +61,7 @@ class step_index_passive_fibre(bases.fibre_base):
             Maximum propagation error used to adjust the proapgation step size
         Sellmeier_file : string
             Absolute path to the Sellmeier coefficients.
-            See pyLaserPulse.data.paths.materials.Sellmeier_coefficients.
+            See pulse_engine.data.paths.materials.Sellmeier_coefficients.
         verbose : bool
             Print information to terminal if True
         """
@@ -148,15 +148,15 @@ class photonic_crystal_passive_fibre(bases.fibre_base):
         """
         Parameters
         ----------
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         length : float
             Fibre length in m
         loss_file : string
             Absolute path to the fibre loss as a function of wavelength.
-            See pyLaserPulse.data.paths.materials.loss_spectra
+            See pulse_engine.data.paths.materials.loss_spectra
         Raman_file : string
             Absolute path to the Raman response as a function of time.
-            See pyLaserPulse.data.paths.materials.Raman_profiles
+            See pulse_engine.data.paths.materials.Raman_profiles
         hole_pitch : float
             Separation of neighbouring air holes in the hexagonal-lattice PCF
             structure.
@@ -173,7 +173,7 @@ class photonic_crystal_passive_fibre(bases.fibre_base):
             Maximum propagation error used to adjust the proapgation step size
         Sellmeier_file : string
             Absolute path to the Sellmeier coefficients.
-            See pyLaserPulse.data.paths.materials.Sellmeier_coefficients.
+            See pulse_engine.data.paths.materials.Sellmeier_coefficients.
         core_diam : Nonetype or float
             Diameter of the signal core in metres. If None, the standard value
             is used for hexagonal-lattice PCF, where the core is made up of a
@@ -228,13 +228,13 @@ class photonic_crystal_passive_fibre(bases.fibre_base):
         Parameters
         ----------
         lambda_window : numpy array
-            Wavelength grid in m. See pyLaserPulse.grid.grid.lambda_window
+            Wavelength grid in m. See pulse_engine.grid.grid.lambda_window
         grid_midpoint : int
             Middle index of the time-frequency grid.
-            See pyLaserPulse.grid.grid.midpoint
+            See pulse_engine.grid.grid.midpoint
         omega_window : numpy array
             Angular frequency grid in rad Hz.
-            See pyLaserPulse.grid.grid.omega_window
+            See pulse_engine.grid.grid.omega_window
 
         Returns
         -------
@@ -269,15 +269,15 @@ class step_index_active_fibre(
         """
         Parameters
         ----------
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         length : float
             Fibre length in m
         loss_file : string
             Absolute path to the fibre loss as a function of wavelength.
-            See pyLaserPulse.data.paths.materials.loss_spectra
+            See pulse_engine.data.paths.materials.loss_spectra
         Raman_file : string
             Absolute path to the Raman response as a function of time.
-            See pyLaserPulse.data.paths.materials.Raman_profiles
+            See pulse_engine.data.paths.materials.Raman_profiles
         core_diam : float
             Core diameter in m
         NA : float
@@ -296,10 +296,10 @@ class step_index_active_fibre(
         cross_section_file : string
             Absolute path to the emission and absorption cross sections as a
             function of wavelength.
-            See pyLaserPulse.data.paths.fibres.cross_sections.
+            See pulse_engine.data.paths.fibres.cross_sections.
         seed_repetition_rate : float
             Repetition rate of the seed laser.
-            See pyLaserPulse.pulse.pulse.repetition_rate
+            See pulse_engine.pulse.pulse.repetition_rate
         pump_points : int
             Number of points in the pump/ASE spectrum window.
         ASE_wl_lims : list
@@ -308,7 +308,7 @@ class step_index_active_fibre(
         Sellmeier_file : string.
             Absolute path to file containing Sellmeier coefficients for the
             fibre material.
-            See pyLaserPulse.data.paths.materials.Sellmeier_coefficients.
+            See pulse_engine.data.paths.materials.Sellmeier_coefficients.
         boundary_conditions : dict
             Set the boundary conditions for resolving the evolution of the
             pump, signal, and ASE light in both directions through the fibre.
@@ -433,7 +433,7 @@ class step_index_active_fibre(
             return the ratio of mode and cladding diameters as a function of
             wavelength.
         lambda_window : numpy array
-            Wavelength grid in m. See pyLaserPulse.grid.grid.lambda_window
+            Wavelength grid in m. See pulse_engine.grid.grid.lambda_window
         core_index : float
             Refractive index of the fibre core.
         cladding_index : float
@@ -492,15 +492,15 @@ class photonic_crystal_active_fibre(
         """
         Parameters
         ----------
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         length : float
             Fibre length in m
         loss_file : string
             Absolute path to the fibre loss as a function of wavelength.
-            See pyLaserPulse.data.paths.materials.loss_spectra
+            See pulse_engine.data.paths.materials.loss_spectra
         Raman_file : string
             Absolute path to the Raman response as a function of time.
-            See pyLaserPulse.data.paths.materials.Raman_profiles
+            See pulse_engine.data.paths.materials.Raman_profiles
         hole_pitch : float
             Separation of neighbouring air holes in the hexagonal-lattice PCF
             structure.
@@ -520,10 +520,10 @@ class photonic_crystal_active_fibre(
         cross_section_file : string
             Absolute path to the emission and absorption cross sections as a
             function of wavelength.
-            See pyLaserPulse.data.paths.fibres.cross_sections.
+            See pulse_engine.data.paths.fibres.cross_sections.
         seed_repetition_rate : float
             Repetition rate of the seed laser.
-            See pyLaserPulse.pulse.pulse.repetition_rate
+            See pulse_engine.pulse.pulse.repetition_rate
         pump_points : int
             Number of points in the pump/ASE spectrum window.
         ASE_wl_lims : list
@@ -531,7 +531,7 @@ class photonic_crystal_active_fibre(
             window in m.
         Sellmeier_file : string
             Absolute path to the Sellmeier coefficients.
-            See pyLaserPulse.data.paths.materials.Sellmeier_coefficients.
+            See pulse_engine.data.paths.materials.Sellmeier_coefficients.
         boundary_conditions : dict
             Set the boundary conditions for resolving the evolution of the
             pump, signal, and ASE light in both directions through the fibre.
@@ -721,7 +721,7 @@ class component(bases.component_base):
         beamsplitting : float
             Intensity fraction remaining in pulse.field if output coupler
             and coupler_type="beamsplitter"
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         crosstalk : float
             Polarization degradation caused by the component.
         order : int
@@ -757,11 +757,11 @@ class component(bases.component_base):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse
+        pulse : pulse_engine.pulse.pulse
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse
+        pulse_engine.pulse.pulse
         """
         return pulse
 
@@ -805,20 +805,20 @@ class fibre_component():
         """
         Parameters
         ----------
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         input_fibre : optical fibre object
             Dfined using, for example:
-            pyLaserPulse.base_components.step_index_passive_fibre
-            pyLaserPulse.base_components.photonic_crystal_passive_fibre
-            pyLaserPulse.base_components.step_index_active_fibre
-            pyLaserPulse.base_components.photonic_crystal_active_fibre
+            pulse_engine.base_components.step_index_passive_fibre
+            pulse_engine.base_components.photonic_crystal_passive_fibre
+            pulse_engine.base_components.step_index_active_fibre
+            pulse_engine.base_components.photonic_crystal_active_fibre
             etc.
         output_fibre : optical fibre object
             Defined using, for example:
-            pyLaserPulse.base_components.step_index_passive_fibre
-            pyLaserPulse.base_components.photonic_crystal_passive_fibre
-            pyLaserPulse.base_components.step_index_active_fibre
-            pyLaserPulse.base_components.photonic_crystal_active_fibre
+            pulse_engine.base_components.step_index_passive_fibre
+            pulse_engine.base_components.photonic_crystal_passive_fibre
+            pulse_engine.base_components.step_index_active_fibre
+            pulse_engine.base_components.photonic_crystal_active_fibre
             etc.
         loss : float
             Insertion loss at the signal wavelength.
@@ -898,11 +898,11 @@ class fibre_component():
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse object
+        pulse_engine.pulse.pulse object
         """
         pulse = self.input_fibre.propagate(pulse)
         pulse = self.component.propagate(pulse)
@@ -961,7 +961,7 @@ class pulse_picker(bases.component_base):
         beamsplitting : float
             Intensity fraction remaining in pulse.field if output coupler
             and coupler_type="beamsplitter"
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         crosstalk : float
             Polarization degradation caused by the component.
         time_open : float
@@ -1027,7 +1027,7 @@ class pulse_picker(bases.component_base):
         ----------
         field : numpy array
             Pulse field in the time domain.
-            See pyLaserPulse.pulse.pulse.field
+            See pulse_engine.pulse.pulse.field
 
         Returns
         -------
@@ -1044,11 +1044,11 @@ class pulse_picker(bases.component_base):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse object
+        pulse_engine.pulse.pulse object
         """
         pulse.repetition_rate = pulse.repetition_rate / self.rate_reduction_factor
         pulse.field = self.apply_temporal_transmission_window(pulse.field)
@@ -1093,20 +1093,20 @@ class fibre_pulse_picker():
         """
         Parameters
         ----------
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         input_fibre : optical fibre object
             Dfined using, for example:
-            pyLaserPulse.base_components.step_index_passive_fibre
-            pyLaserPulse.base_components.photonic_crystal_passive_fibre
-            pyLaserPulse.base_components.step_index_active_fibre
-            pyLaserPulse.base_components.photonic_crystal_active_fibre
+            pulse_engine.base_components.step_index_passive_fibre
+            pulse_engine.base_components.photonic_crystal_passive_fibre
+            pulse_engine.base_components.step_index_active_fibre
+            pulse_engine.base_components.photonic_crystal_active_fibre
             etc.
         output_fibre : optical fibre object
             Dfined using, for example:
-            pyLaserPulse.base_components.step_index_passive_fibre
-            pyLaserPulse.base_components.photonic_crystal_passive_fibre
-            pyLaserPulse.base_components.step_index_active_fibre
-            pyLaserPulse.base_components.photonic_crystal_active_fibre
+            pulse_engine.base_components.step_index_passive_fibre
+            pulse_engine.base_components.photonic_crystal_passive_fibre
+            pulse_engine.base_components.step_index_active_fibre
+            pulse_engine.base_components.photonic_crystal_active_fibre
             etc.
         loss : float
             Insertion loss at the signal wavelength.
@@ -1197,11 +1197,11 @@ class fibre_pulse_picker():
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse object
+        pulse_engine.pulse.pulse object
         """
         pulse = self.input_fibre.propagate(pulse)
         pulse = self.pulse_picker.propagate(pulse)
@@ -1250,7 +1250,7 @@ class grating_compressor(component):
             bandwidth for reflective optics.
         coating_material : string
             Absolute path to a coating reflectivity spectrum.
-            See pyLaserPulse.data.paths.materials.reflectivities
+            See pulse_engine.data.paths.materials.reflectivities
         lambda_c : float
             Central wavelength of transmission window.
         epsilon : complex
@@ -1272,7 +1272,7 @@ class grating_compressor(component):
             Grating incidence angle in radians.
         groove_density : float
             Grating lines per mm
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         order : int
             Steepness of the super-Gaussian transmission window edges.
         optimize : bool
@@ -1380,7 +1380,7 @@ class grating_compressor(component):
         ----------
         field : numpy array
             Pulse field in the time domain.
-            See pyLaserPulse.pulse.pulse.field
+            See pulse_engine.pulse.pulse.field
         photon_spec : numpy array
             Number of photonics in each frequency bin of the pulse spectrum.
 
@@ -1461,11 +1461,11 @@ class grating_compressor(component):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse object
+        pulse_engine.pulse.pulse object
         """
         self.make_transmission_spectrum()
         self.make_Jones_matrix()
@@ -1524,7 +1524,7 @@ class grating_compressor(component):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
 
         Returns
         -------
@@ -1606,15 +1606,15 @@ class step_index_fibre_compressor(step_index_passive_fibre):
         """
         Parameters
         ----------
-        g : pyLaserPulse.grid.grid object
+        g : pulse_engine.grid.grid object
         length : float
             Fibre length in m
         loss_file : string
             Absolute path to the fibre loss as a function of wavelength.
-            See pyLaserPulse.data.paths.materials.loss_spectra
+            See pulse_engine.data.paths.materials.loss_spectra
         Raman_file : string
             Absolute path to the Raman response as a function of time.
-            See pyLaserPulse.data.paths.materials.Raman_profiles
+            See pulse_engine.data.paths.materials.Raman_profiles
         core_diam : float
             Core diameter in m
         NA : float
@@ -1630,7 +1630,7 @@ class step_index_fibre_compressor(step_index_passive_fibre):
             Maximum propagation error used to adjust the proapgation step size
         Sellmeier_file : string
             Absolute path to the Sellmeier coefficients.
-            See pyLaserPulse.data.paths.materials.Sellmeier_coefficients.
+            See pulse_engine.data.paths.materials.Sellmeier_coefficients.
         optimize : bool
             Uses the Nelder-Mead algorithm from scipy.optimize.minimize if True
             to find the fibre length that minimizes the difference between the
@@ -1650,11 +1650,11 @@ class step_index_fibre_compressor(step_index_passive_fibre):
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse object
+        pulse_engine.pulse.pulse object
         """
         input_field = pulse.field.copy()
         pulse.get_transform_limit(input_field)
@@ -1711,13 +1711,13 @@ class step_index_fibre_compressor(step_index_passive_fibre):
         ----------
         length : float
             Fibre length in m
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
 
         Returns
         -------
         numpy array
             Pulse field in the time domain.
-            See pyLaserPulse.pulse.pulse.field
+            See pulse_engine.pulse.pulse.field
         """
         field = pulse.field.copy()
         spec = utils.fft(field)
@@ -1778,11 +1778,11 @@ class rotated_splice:
 
         Parameters
         ----------
-        pulse : pyLaserPulse.pulse.pulse object
+        pulse : pulse_engine.pulse.pulse object
 
         Returns
         -------
-        pyLaserPulse.pulse.pulse object
+        pulse_engine.pulse.pulse object
         """
         field = pulse.field.copy()
         field = np.dot(self.rot_matrix, field)

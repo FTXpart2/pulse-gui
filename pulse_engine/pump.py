@@ -10,7 +10,7 @@ Class for pump light
 
 import numpy as np
 import scipy.constants as const
-import pyLaserPulse.utils as utils
+import pulse_engine.utils as utils
 
 
 class pump:
@@ -121,7 +121,7 @@ class pump:
             The spectrum to convert to ESD or PSD
         repetition_rate : float
             Repetition rate of the seed laser.
-            See pyLaserPulse.pulse.repetition_rate
+            See pulse_engine.pulse.repetition_rate
 
         Returns
         -------

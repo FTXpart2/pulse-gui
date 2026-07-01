@@ -3,7 +3,7 @@
 
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavBar
-from pyLaserPulse.single_plot_window.plot_widget import Ui_MainWindow
+from pulse_engine.single_plot_window.plot_widget import Ui_MainWindow
 
 
 class MatplotlibWindow(QtWidgets.QMainWindow):

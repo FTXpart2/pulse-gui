@@ -1,11 +1,11 @@
-"""Fiber propagation simulation wrapper around pyLaserPulse."""
+"""Fiber propagation simulation wrapper around pulse_engine."""
 
 from dataclasses import dataclass, field
 
 import numpy as np
 
-import pyLaserPulse.catalogue_components.passive_fibres as pf
-import pyLaserPulse.optical_assemblies as oa
+import pulse_engine.catalogue_components.passive_fibres as pf
+import pulse_engine.optical_assemblies as oa
 
 from pulse_gui.pulse_shapes import PulseParams, build_grid, create_pulse
 

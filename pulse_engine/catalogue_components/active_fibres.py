@@ -8,8 +8,8 @@ Created on Tue Jun 20 09:16:08 2023
 Module of classes for branded active optical fibre.
 """
 
-from pyLaserPulse.data import paths
-import pyLaserPulse.base_components as bc
+from pulse_engine.data import paths
+import pulse_engine.base_components as bc
 
 
 class nLight_Yb1200_4_125(bc.step_index_active_fibre):
@@ -19,7 +19,7 @@ class nLight_Yb1200_4_125(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -35,7 +35,7 @@ class nLight_Yb1200_4_125(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -72,7 +72,7 @@ class ORC_HD406_YDF(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -90,7 +90,7 @@ class ORC_HD406_YDF(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -125,7 +125,7 @@ class CorActive_SCF_YB550_4_125_19(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -141,7 +141,7 @@ class CorActive_SCF_YB550_4_125_19(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -176,7 +176,7 @@ class OFS_R37003(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -192,7 +192,7 @@ class OFS_R37003(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -229,7 +229,7 @@ class OFS_EDF07_PM(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -243,7 +243,7 @@ class OFS_EDF07_PM(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -299,7 +299,7 @@ class OFS_EDF08_PM(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -313,7 +313,7 @@ class OFS_EDF08_PM(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -366,7 +366,7 @@ class nLight_Er80_4_125_HD_PM(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -380,7 +380,7 @@ class nLight_Er80_4_125_HD_PM(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -423,7 +423,7 @@ class Thorlabs_Liekki_M5_980_125(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -439,7 +439,7 @@ class Thorlabs_Liekki_M5_980_125(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -474,7 +474,7 @@ class NKT_DC_200_40_PZ_YB(bc.photonic_crystal_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -490,7 +490,7 @@ class NKT_DC_200_40_PZ_YB(bc.photonic_crystal_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     cladding_pumping : bool
@@ -568,7 +568,7 @@ class Nufern_EDFC_980_HP(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -584,7 +584,7 @@ class Nufern_EDFC_980_HP(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -619,7 +619,7 @@ class Nufern_PLMA_YDF_10_125_M(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -633,7 +633,7 @@ class Nufern_PLMA_YDF_10_125_M(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -679,7 +679,7 @@ class Nufern_PM_YDF_5_130_VIII(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -693,7 +693,7 @@ class Nufern_PM_YDF_5_130_VIII(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -741,7 +741,7 @@ class Nufern_PLMA_YDF_25_250(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -755,7 +755,7 @@ class Nufern_PLMA_YDF_25_250(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     cladding_pumping : bool
@@ -804,7 +804,7 @@ class Nufern_PLMA_30_400(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -818,7 +818,7 @@ class Nufern_PLMA_30_400(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     cladding_pumping : bool
@@ -867,7 +867,7 @@ class Nufern_FUD_4288_LMA_YDF_48_400E(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -881,7 +881,7 @@ class Nufern_FUD_4288_LMA_YDF_48_400E(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     cladding_pumping : bool
@@ -930,7 +930,7 @@ class Nufern_PM_YSF_HI_HP(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -944,7 +944,7 @@ class Nufern_PM_YSF_HI_HP(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float
@@ -980,7 +980,7 @@ class Thorlabs_Liekki_Yb1200_6_125_DC(bc.step_index_active_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     seed_repetition_rate : float
@@ -994,7 +994,7 @@ class Thorlabs_Liekki_Yb1200_6_125_DC(bc.step_index_active_fibre):
         signal, and ASE light in both directions through the fibre.
         The type of simulation -- i.e., single-pass or full boundary value
         solver -- is determined by this dictionary.
-        See pyLaserPulse.base_components.step_index_active_fibre
+        See pulse_engine.base_components.step_index_active_fibre
     time_domain_gain : Boolean
         Time domain gain included if True.
     n2 : float

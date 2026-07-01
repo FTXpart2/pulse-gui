@@ -1,6 +1,6 @@
 """Custom fast saturable absorber component for mode-locking.
 
-pyLaserPulse does not ship a saturable absorber, so this provides a simple
+pulse_engine does not ship a saturable absorber, so this provides a simple
 fast-SA model that plugs into the optical_assemblies machinery. The
 instantaneous power-dependent transmission is:
 
@@ -13,7 +13,7 @@ low-intensity wings/noise, which favours pulse formation from noise.
 
 import numpy as np
 
-import pyLaserPulse.base_components as bc
+import pulse_engine.base_components as bc
 
 
 class FastSaturableAbsorber(bc.component):
@@ -24,7 +24,7 @@ class FastSaturableAbsorber(bc.component):
         """
         Parameters
         ----------
-        grid : pyLaserPulse.grid.grid object
+        grid : pulse_engine.grid.grid object
         mod_depth : float
             Modulation depth q0 (0..1). Fraction of low-power light absorbed.
         sat_power : float

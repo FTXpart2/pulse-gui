@@ -6,11 +6,11 @@ import numpy as np  # required for some fmt commands
 import multiprocessing as mp
 import time
 
-from pyLaserPulse.single_plot_window.mplwidget import MplWidget
-from pyLaserPulse.single_plot_window.plot_gallery import Ui_MainWindow
-from pyLaserPulse.data import paths
-import pyLaserPulse.sys_info as si
-import pyLaserPulse.single_plot_window.single_matplotlib_window as smw
+from pulse_engine.single_plot_window.mplwidget import MplWidget
+from pulse_engine.single_plot_window.plot_gallery import Ui_MainWindow
+from pulse_engine.data import paths
+import pulse_engine.sys_info as si
+import pulse_engine.single_plot_window.single_matplotlib_window as smw
 
 # Taskbar icon in windows
 if si.OS == "Windows":
@@ -31,7 +31,7 @@ def launch_plot(plot_dicts):
     # dpi = app.screens()[0].physicalDotsPerInch()
     dpi = 96
     plotWindow = MatplotlibGallery(
-        plot_dicts=plot_dicts, windowTitle='pyLaserPulse simulation gallery',
+        plot_dicts=plot_dicts, windowTitle='pulse_engine simulation gallery',
         dpi=dpi)
     plotWindow.show()
     app.exec()

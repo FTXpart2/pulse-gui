@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-import pyLaserPulse.grid as plp_grid
-import pyLaserPulse.pulse as plp_pulse
+import pulse_engine.grid as plp_grid
+import pulse_engine.pulse as plp_pulse
 
 
 PULSE_SHAPES = ("Gaussian", "Soliton", "Square")
@@ -55,7 +55,7 @@ def build_grid(params: PulseParams):
 
 
 def create_pulse(grid, params: PulseParams, high_res_sampling: bool = True):
-    """Create a pyLaserPulse pulse object ready for fiber propagation."""
+    """Create a pulse_engine pulse object ready for fiber propagation."""
     width = _width_seconds(params.width_fs)
     peak_power = [params.amplitude_w, params.amplitude_w * 1e-3]
 

@@ -8,8 +8,8 @@ Created on Tue Jun 20 09:14:08 2023
 Module of classes for branded passive optical fibre.
 """
 
-from pyLaserPulse.data import paths
-import pyLaserPulse.base_components as bc
+from pulse_engine.data import paths
+import pulse_engine.base_components as bc
 
 
 class Corning_HI1060(bc.step_index_passive_fibre):
@@ -19,7 +19,7 @@ class Corning_HI1060(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -51,7 +51,7 @@ class Corning_HI1060_FLEX(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -89,7 +89,7 @@ class SMF_28(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -121,7 +121,7 @@ class SMF_28e(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -158,7 +158,7 @@ class OFS_980(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -190,7 +190,7 @@ class Nufern_SM2000D(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -228,7 +228,7 @@ class Nufern_FUD4258_UHNA(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -261,7 +261,7 @@ class Nufern_PLMA_GDF_10_125(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -292,7 +292,7 @@ class Nufern_PLMA_GDF_10_125_M(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -322,7 +322,7 @@ class Nufern_PLMA_GDF_25_250(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -353,7 +353,7 @@ class SMF_780HP(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -385,7 +385,7 @@ class PM980_XP(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -415,7 +415,7 @@ class PM1550_XP(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -445,7 +445,7 @@ class Nufern_PM_GDF_5_130(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -476,7 +476,7 @@ class OFS_80414p2(bc.step_index_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -523,7 +523,7 @@ class NKT_SC_5_1040(bc.photonic_crystal_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -560,7 +560,7 @@ class NKT_SC_5_1040_PM(bc.photonic_crystal_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -595,7 +595,7 @@ class NKT_NL_1050_NEG_1(bc.photonic_crystal_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float
@@ -638,7 +638,7 @@ class NKT_femtowhite_800(bc.photonic_crystal_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     beat_length : float
@@ -683,7 +683,7 @@ class NKT_DC_200_40_PZ_SI(bc.photonic_crystal_passive_fibre):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length : float
         Fibre length.
     tol : float

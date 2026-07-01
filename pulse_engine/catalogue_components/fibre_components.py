@@ -10,10 +10,10 @@ Module of classes for branded fibre-coupled components.
 
 import numpy as np
 
-from pyLaserPulse.data import paths
-import pyLaserPulse.base_components as bc
-import pyLaserPulse.catalogue_components.passive_fibres as pf
-import pyLaserPulse.utils as utils
+from pulse_engine.data import paths
+import pulse_engine.base_components as bc
+import pulse_engine.catalogue_components.passive_fibres as pf
+import pulse_engine.utils as utils
 
 
 class JDSU_fused_976_1030_WDM(bc.fibre_component):
@@ -22,7 +22,7 @@ class JDSU_fused_976_1030_WDM(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Length of the input fibre in m.
     length_out : float
@@ -79,7 +79,7 @@ class Thorlabs_IO_J_1030(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m.
     length_out : float
@@ -123,7 +123,7 @@ class Opneti_1x2_PM_filter_coupler_500mW(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -165,7 +165,7 @@ class Opneti_1x2_PM_95_5_filter_coupler_500mW_fast_axis_blocked(
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -214,7 +214,7 @@ class Opneti_PM_isolator_WDM_hybrid(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -248,7 +248,7 @@ class Opneti_high_power_PM_isolator(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -291,7 +291,7 @@ class Opneti_high_power_filter_WDM_1020_1080(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -332,7 +332,7 @@ class AFR_fast_axis_blocking_isolator_PMI_03_1_P_N_B_F(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -366,7 +366,7 @@ class Opneti_fast_axis_blocking_isolator_PMIS_S_P_1030(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -408,7 +408,7 @@ class Gooch_and_Housego_FiberQ_PM_1060_200MHz(bc.fibre_pulse_picker):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -448,7 +448,7 @@ class Aerodiode_fiber_coupled_100MHz_AOM_1064(bc.fibre_pulse_picker):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -488,7 +488,7 @@ class Aerodiode_fiber_coupled_200MHz_AOM_1064(bc.fibre_pulse_picker):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float
@@ -529,7 +529,7 @@ class DKPhotonics_P_WDM_iso_tap_980_1550(bc.fibre_component):
 
     Parameters
     ----------
-    grid : pyLaserPulse.grid.grid object
+    grid : pulse_engine.grid.grid object
     length_in : float
         Input fibre length in m
     length_out : float

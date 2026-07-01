@@ -24,6 +24,8 @@ from pulse_gui.mode_locked_simulation import (
     ER_FIBRES, RingLaserConfig, RingLaserResult, run_ring_laser,
     cavity_rep_rate)
 from pulse_gui import advisor
+from pulse_gui.pulse_metrics import (
+    measure, format_metrics_html, PulseMetrics, evaluate_fit)
 
 
 TIME_AXIS_LIMITS = (-25.0, 25.0)
@@ -41,6 +43,8 @@ class Evolution:
         self.time_evolution = np.asarray(time_evolution)
         self.spectral_evolution = np.asarray(spectral_evolution)
         self.input_intensity = input_intensity
+        self.converged = None
+        self.round_trips_run = None
 
     @property
     def n_steps(self):
@@ -59,10 +63,48 @@ def _passive_to_evolution(result: SimulationResult) -> Evolution:
         input_intensity=result.input_intensity)
 
 
+def _track_peak_index(y, prev_idx, search_half_width=100):
+    """Dominant peak index tracked near the previous frame for smooth scrolling."""
+    y = np.asarray(y, dtype=float)
+    peak_val = y.max()
+    if peak_val <= 0 or not np.isfinite(peak_val):
+        return prev_idx
+    i0 = max(0, prev_idx - search_half_width)
+    i1 = min(len(y), prev_idx + search_half_width + 1)
+    segment = y[i0:i1]
+    if segment.max() < 0.12 * peak_val:
+        return int(np.argmax(y))
+    return i0 + int(np.argmax(segment))
+
+
+def _recenter_evolution(time_evolution):
+    """Roll each round-trip trace so its dominant pulse sits at the window
+    center. Peaks are tracked sequentially (not independently) so the pulse
+    does not jump between noise spikes when scrubbing or animating."""
+    te = np.asarray(time_evolution, dtype=float)
+    if te.ndim != 2 or te.size == 0:
+        return te
+    center = te.shape[1] // 2
+    out = np.empty_like(te)
+    prev_peak = center
+    for i, row in enumerate(te):
+        peak = row.max()
+        if not np.isfinite(peak) or peak <= 0:
+            out[i] = np.roll(row, center - prev_peak)
+            continue
+        peak_idx = _track_peak_index(row, prev_peak)
+        prev_peak = peak_idx
+        out[i] = np.roll(row, center - peak_idx)
+    return out
+
+
 def _ring_to_evolution(result: RingLaserResult) -> Evolution:
-    return Evolution(
+    evo = Evolution(
         result.time_ps, result.wavelength_nm, result.round_trip, "round trip",
-        result.time_evolution, result.spectral_evolution)
+        _recenter_evolution(result.time_evolution), result.spectral_evolution)
+    evo.converged = result.converged
+    evo.round_trips_run = result.round_trips_run
+    return evo
 
 
 class SimulationWorker(QtCore.QThread):
@@ -112,8 +154,8 @@ class AutotuneWorker(QtCore.QThread):
 
 
 class PlotCanvas(FigureCanvas):
-    def __init__(self, width=7, height=6):
-        self.figure = Figure(figsize=(width, height), tight_layout=True)
+    def __init__(self, width=7, height=6, tight_layout=True):
+        self.figure = Figure(figsize=(width, height), tight_layout=tight_layout)
         super().__init__(self.figure)
 
 
@@ -196,9 +238,8 @@ class CalibrationDialog(QtWidgets.QDialog):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(
-            "pyLaserPulse — Pulse Generator, Fiber Propagation & Ring Laser")
-        self.resize(1500, 950)
+        self.setWindowTitle("Pulse-UI")
+        self.resize(1550, 1020)
 
         self._evolution: Evolution | None = None
         self._worker: SimulationWorker | None = None
@@ -272,6 +313,17 @@ class MainWindow(QtWidgets.QMainWindow):
         anim_layout.addLayout(play_row)
         control_layout.addWidget(anim_box)
 
+        metrics_box = QtWidgets.QGroupBox("Pulse Metrics")
+        metrics_layout = QtWidgets.QVBoxLayout(metrics_box)
+        self.metrics_label = QtWidgets.QLabel(
+            "Run a simulation or move the step slider to see measurements.")
+        self.metrics_label.setWordWrap(True)
+        self.metrics_label.setTextFormat(QtCore.Qt.RichText)
+        self.metrics_label.setStyleSheet(
+            "QLabel { background: #f4f4f4; padding: 6px; border-radius: 4px; }")
+        metrics_layout.addWidget(self.metrics_label)
+        control_layout.addWidget(metrics_box)
+
         self.status_label = QtWidgets.QLabel("Ready.")
         self.status_label.setWordWrap(True)
         control_layout.addWidget(self.status_label)
@@ -289,10 +341,34 @@ class MainWindow(QtWidgets.QMainWindow):
         self.combined_twin = self.combined_ax.twiny()
         self.tabs.addTab(self.live_canvas, "Time + Spectrum")
 
-        self.evo_canvas = PlotCanvas(width=7, height=6)
-        self.evo_ax = self.evo_canvas.figure.add_subplot(111, projection="3d")
+        self.evo_canvas = PlotCanvas(width=10, height=9, tight_layout=False)
+        evo_gs = self.evo_canvas.figure.add_gridspec(
+            2, 1, height_ratios=[2.4, 0.55], hspace=0.32)
+        self.evo_ax = self.evo_canvas.figure.add_subplot(
+            evo_gs[0], projection="3d")
+        self.evo_slice_ax = self.evo_canvas.figure.add_subplot(evo_gs[1])
         self._evo_cbar = None
-        self.tabs.addTab(self.evo_canvas, "Evolution (3D)")
+        self._evo_position_artists = []
+        self._evo_plot_data = None
+
+        evo_tab = QtWidgets.QWidget()
+        evo_layout = QtWidgets.QVBoxLayout(evo_tab)
+        evo_layout.setContentsMargins(4, 4, 4, 4)
+
+        self.evo_round_label = QtWidgets.QLabel("Round trip: —")
+        evo_layout.addWidget(self.evo_round_label)
+
+        self.evo_round_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.evo_round_slider.setEnabled(False)
+        self.evo_round_slider.setToolTip(
+            "Scroll through round trips (or fiber steps) to view the 2D "
+            "waveform at that point in the evolution.")
+        evo_layout.addWidget(self.evo_round_slider)
+
+        evo_layout.addWidget(self.evo_canvas, stretch=1)
+
+        self._evo_tab = evo_tab
+        self.tabs.addTab(evo_tab, "Evolution (3D)")
 
         layout.addWidget(self.tabs, stretch=1)
 
@@ -440,8 +516,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sa_satp_spin.setSuffix(" W")
 
         self.round_trips_spin = QtWidgets.QSpinBox()
-        self.round_trips_spin.setRange(2, 1000)
-        self.round_trips_spin.setValue(250)
+        self.round_trips_spin.setRange(2, 2000)
+        self.round_trips_spin.setValue(300)
+        self.round_trips_spin.setToolTip(
+            "Maximum round trips. With 'loop to steady state' enabled the run "
+            "stops early once the pulse energy and count settle.")
+
+        self.steady_check = QtWidgets.QCheckBox(
+            "Loop to steady state (auto-stop)")
+        self.steady_check.setChecked(True)
 
         self.noise_check = QtWidgets.QCheckBox("Start from noise")
         self.noise_check.setChecked(True)
@@ -458,7 +541,8 @@ class MainWindow(QtWidgets.QMainWindow):
         form.addRow("Bandpass T:", self.bandpass_spin)
         form.addRow("SA mod. depth:", self.sa_depth_spin)
         form.addRow("SA sat. power:", self.sa_satp_spin)
-        form.addRow("Round trips:", self.round_trips_spin)
+        form.addRow("Max round trips:", self.round_trips_spin)
+        form.addRow("", self.steady_check)
         form.addRow("", self.noise_check)
         return self.ring_box
 
@@ -475,6 +559,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.play_btn.clicked.connect(self.toggle_animation)
         self.stop_btn.clicked.connect(self.stop_animation)
         self.step_slider.valueChanged.connect(self.show_step)
+        self.evo_round_slider.valueChanged.connect(self._on_evo_slider_changed)
         for widget in (self.shape_combo, self.width_spin, self.amplitude_spin,
                        self.wavelength_spin):
             if isinstance(widget, QtWidgets.QComboBox):
@@ -650,6 +735,7 @@ class MainWindow(QtWidgets.QMainWindow):
             sa_mod_depth=self.sa_depth_spin.value(),
             sa_sat_power_w=self.sa_satp_spin.value(),
             round_trips=self.round_trips_spin.value(),
+            loop_to_steady_state=self.steady_check.isChecked(),
             seed_from_noise=self.noise_check.isChecked(),
             group_index=self._calib["group_index"],
             central_wl_nm=self._calib["central_wl_nm"],
@@ -674,9 +760,13 @@ class MainWindow(QtWidgets.QMainWindow):
         spectrum = np.abs(np.fft.fftshift(np.fft.fft(intensity))) ** 2
         wl = grid.lambda_window * 1e9
 
-        self._plot_time(time_ps, intensity, title="Input Pulse — Time Domain")
-        self._plot_spectrum(wl, spectrum, title="Input Pulse — Spectrum")
+        metrics = measure(time_ps, intensity, wl, spectrum)
+        self._plot_time(time_ps, intensity, title="Input Pulse — Time Domain",
+                        metrics=metrics)
+        self._plot_spectrum(wl, spectrum, title="Input Pulse — Spectrum",
+                            metrics=metrics)
         self._plot_combined(time_ps, intensity, wl, spectrum)
+        self._update_metrics(metrics)
         self.live_canvas.draw()
         self.status_label.setText("Input waveform preview updated.")
 
@@ -709,13 +799,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.step_slider.setMaximum(max_step)
         self.step_slider.setValue(max_step)
         self.step_slider.setEnabled(max_step > 0)
+        self.evo_round_slider.setMaximum(max_step)
+        self.evo_round_slider.setValue(max_step)
+        self.evo_round_slider.setEnabled(max_step > 0)
         self.play_btn.setEnabled(max_step > 0)
 
         self._plot_evolution_3d(evolution)
         self.show_step(max_step)
-        self.status_label.setText(
-            f"Done — {evolution.n_steps} steps ({evolution.step_unit}). "
-            f"Use the slider or Play to step through.")
+        if evolution.converged is not None and evolution.step_unit == "round trip":
+            if evolution.converged:
+                conv = (f"Reached steady state after "
+                        f"{evolution.round_trips_run} round trips.")
+            else:
+                conv = (f"Stopped at max {evolution.round_trips_run} round "
+                        f"trips (steady state not detected).")
+            self.status_label.setText(
+                f"Done — {conv} Use the slider or Play to step through.")
+        else:
+            self.status_label.setText(
+                f"Done — {evolution.n_steps} steps ({evolution.step_unit}). "
+                f"Use the slider or Play to step through.")
 
     def _on_error(self, message: str):
         self.progress.setVisible(False)
@@ -737,13 +840,131 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.step_label.setText(f"Step {index}: {label}")
         overlay = evo.input_intensity
+        metrics = measure(evo.time_ps, intensity, evo.wavelength_nm, spectrum)
         self._plot_time(evo.time_ps, intensity, overlay=overlay,
-                        title=f"Time Domain — {label}")
+                        title=f"Time Domain — {label}", metrics=metrics)
         self._plot_spectrum(evo.wavelength_nm, spectrum,
-                            title=f"Spectrum — {label}")
+                            title=f"Spectrum — {label}", metrics=metrics)
         self._plot_combined(evo.time_ps, intensity, evo.wavelength_nm,
                             spectrum)
-        self.live_canvas.draw()
+        self._update_metrics(metrics)
+        if self._anim_playing:
+            self.live_canvas.draw_idle()
+            if self.tabs.currentWidget() == self._evo_tab:
+                self._plot_evolution_slice(index)
+            else:
+                if self.evo_round_slider.value() != index:
+                    self.evo_round_slider.blockSignals(True)
+                    self.evo_round_slider.setValue(index)
+                    self.evo_round_slider.blockSignals(False)
+                self._update_evo_3d_position(index)
+                self.evo_canvas.draw_idle()
+        else:
+            self.live_canvas.draw()
+            if self.evo_round_slider.value() != index:
+                self.evo_round_slider.blockSignals(True)
+                self.evo_round_slider.setValue(index)
+                self.evo_round_slider.blockSignals(False)
+            self._plot_evolution_slice(index)
+
+    def _on_evo_slider_changed(self, index: int):
+        """Evolution-tab slider: show 2D slice and sync the main step slider."""
+        if self._evolution is None:
+            return
+        on_evo_tab = self.tabs.currentWidget() == self._evo_tab
+        self._plot_evolution_slice(index)
+        if self.step_slider.value() != index:
+            self.step_slider.blockSignals(True)
+            self.step_slider.setValue(index)
+            self.step_slider.blockSignals(False)
+        if on_evo_tab:
+            self._sync_step_label(index)
+        else:
+            self.show_step(index)
+
+    def _sync_step_label(self, index: int):
+        """Update left-panel step label without redrawing the live plots."""
+        if self._evolution is None:
+            return
+        index = int(index)
+        self._anim_index = index
+        self.step_label.setText(
+            f"Step {index}: {self._evolution.label(index)}")
+
+    def _plot_evolution_slice(self, index: int):
+        """Draw the 2D time-domain waveform for one evolution step."""
+        if self._evolution is None:
+            return
+        index = int(index)
+        evo = self._evolution
+        if index < 0 or index >= evo.n_steps:
+            return
+        intensity = evo.time_evolution[index]
+        label = evo.label(index)
+        spectrum = evo.spectral_evolution[index]
+        metrics = measure(evo.time_ps, intensity, evo.wavelength_nm, spectrum)
+
+        self.evo_slice_ax.clear()
+        self.evo_slice_ax.plot(
+            evo.time_ps, intensity, color="C0", lw=1.5, label="power")
+        if metrics.best_fit.valid:
+            fit_y = evaluate_fit(evo.time_ps, metrics.best_fit)
+            if fit_y is not None:
+                self.evo_slice_ax.plot(
+                    evo.time_ps, fit_y, color="C3", lw=1.2, ls="--",
+                    label=f"{metrics.best_fit.shape} fit")
+        self.evo_slice_ax.set_xlim(*TIME_AXIS_LIMITS)
+        self.evo_slice_ax.set_xlabel("Time (ps)")
+        self.evo_slice_ax.set_ylabel("Power (W)")
+        self.evo_slice_ax.set_title(f"2D waveform — {label}", fontsize=10)
+        self.evo_slice_ax.grid(True, alpha=0.3)
+        if metrics.best_fit.valid:
+            self.evo_slice_ax.legend(loc="upper right", fontsize=8)
+
+        if evo.step_unit == "round trip":
+            self.evo_round_label.setText(
+                f"Round trip: {int(evo.steps[index])} "
+                f"(index {index} of {evo.n_steps - 1})")
+        else:
+            self.evo_round_label.setText(f"Step {index}: {label}")
+        self._update_evo_3d_position(index)
+        self.evo_canvas.draw_idle()
+
+    def _update_evo_3d_position(self, index: int):
+        """Highlight the selected round-trip slice on the 3D evolution plot."""
+        if self._evo_plot_data is None:
+            return
+        index = int(index)
+        pd = self._evo_plot_data
+        steps = pd["steps"]
+        if index < 0 or index >= len(steps):
+            return
+
+        for art in self._evo_position_artists:
+            try:
+                art.remove()
+            except (ValueError, AttributeError):
+                pass
+        self._evo_position_artists = []
+
+        t_win = pd["t_win"]
+        data_win = pd["data_win"]
+        y0 = float(steps[index])
+        power = data_win[index]
+        z_hi = max(float(np.max(data_win)), float(np.max(power)), 1e-12) * 1.08
+        t_lo, t_hi = float(t_win.min()), float(t_win.max())
+
+        # Semi-transparent bar (time–power plane at the selected round trip).
+        Yt = np.array([[y0, y0], [y0, y0]])
+        Tt = np.array([[t_lo, t_hi], [t_lo, t_hi]])
+        Zt = np.array([[0.0, 0.0], [z_hi, z_hi]])
+        bar = self.evo_ax.plot_surface(
+            Tt, Yt, Zt, color="#00bcd4", alpha=0.28, shade=False,
+            linewidth=0, antialiased=False)
+        profile, = self.evo_ax.plot(
+            t_win, np.full_like(t_win, y0), power,
+            color="#00e5ff", lw=2.5, zorder=10)
+        self._evo_position_artists.extend([bar, profile])
 
     def toggle_animation(self):
         if self._anim_playing:
@@ -752,7 +973,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._anim_playing = True
             self.play_btn.setText("Pause")
             self.stop_btn.setEnabled(True)
-            self._anim_timer.start(150)
+            self._anim_timer.start(60)
 
     def stop_animation(self):
         self._anim_playing = False
@@ -769,21 +990,43 @@ class MainWindow(QtWidgets.QMainWindow):
         self.step_slider.setValue(nxt)
 
     # ---------------------------------------------------------------- plots
-    def _plot_time(self, time_ps, intensity, overlay=None, title=""):
+    def _update_metrics(self, metrics: PulseMetrics):
+        self.metrics_label.setText(format_metrics_html(metrics))
+
+    def _plot_fwhm_overlay(self, ax, x_left, x_right, half_level, color):
+        if not (np.isfinite(x_left) and np.isfinite(x_right)
+                and np.isfinite(half_level) and half_level > 0):
+            return
+        ax.axhline(half_level, color=color, ls=":", lw=0.9, alpha=0.7)
+        ax.axvline(x_left, color=color, ls="--", lw=0.9, alpha=0.7)
+        ax.axvline(x_right, color=color, ls="--", lw=0.9, alpha=0.7)
+
+    def _plot_time(self, time_ps, intensity, overlay=None, title="",
+                   metrics=None):
         self.time_ax.clear()
         if overlay is not None:
             self.time_ax.plot(time_ps, overlay, color="0.7", lw=1.0,
                               label="input", alpha=0.8)
         self.time_ax.plot(time_ps, intensity, color="C0", lw=1.5,
                           label="current")
+        if metrics is not None and metrics.best_fit.valid:
+            fit_y = evaluate_fit(time_ps, metrics.best_fit)
+            if fit_y is not None:
+                self.time_ax.plot(
+                    time_ps, fit_y, color="C3", lw=1.2, ls="--",
+                    label=f"{metrics.best_fit.shape} fit")
         self.time_ax.set_xlim(*TIME_AXIS_LIMITS)
         self.time_ax.set_xlabel("Time (ps)")
         self.time_ax.set_ylabel("Power (W)")
         self.time_ax.set_title(title, fontsize=10)
         self.time_ax.grid(True, alpha=0.3)
         self.time_ax.legend(loc="upper right", fontsize=8)
+        if metrics is not None:
+            self._plot_fwhm_overlay(
+                self.time_ax, metrics.time_fwhm_left_ps,
+                metrics.time_fwhm_right_ps, 0.5 * metrics.peak_power_w, "C0")
 
-    def _plot_spectrum(self, wavelength_nm, spectrum, title=""):
+    def _plot_spectrum(self, wavelength_nm, spectrum, title="", metrics=None):
         self.spec_ax.clear()
         spec = np.maximum(spectrum, 1e-30)
         self.spec_ax.semilogy(wavelength_nm, spec, color="C1", lw=1.2)
@@ -791,6 +1034,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.spec_ax.set_ylabel("Spectral density (arb.)")
         self.spec_ax.set_title(title, fontsize=10)
         self.spec_ax.grid(True, which="both", alpha=0.3)
+        if metrics is not None and metrics.spectral_peak > 0:
+            half = 0.5 * metrics.spectral_peak
+            self._plot_fwhm_overlay(
+                self.spec_ax, metrics.spectral_fwhm_left_nm,
+                metrics.spectral_fwhm_right_nm, half, "C1")
 
     def _plot_combined(self, time_ps, intensity, wavelength_nm, spectrum):
         self.combined_ax.clear()
@@ -821,6 +1069,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._evo_cbar is not None:
             self._evo_cbar.remove()
             self._evo_cbar = None
+        for art in self._evo_position_artists:
+            try:
+                art.remove()
+            except (ValueError, AttributeError):
+                pass
+        self._evo_position_artists = []
         self.evo_ax.clear()
         t = evo.time_ps
         steps = evo.steps
@@ -833,6 +1087,12 @@ class MainWindow(QtWidgets.QMainWindow):
         t_ds = t_win[::stride]
         data_ds = data_win[:, ::stride]
 
+        self._evo_plot_data = {
+            "t_win": t_win,
+            "steps": steps,
+            "data_win": data_win,
+        }
+
         T, S = np.meshgrid(t_ds, steps)
         surf = self.evo_ax.plot_surface(
             T, S, data_ds, cmap="inferno", linewidth=0, antialiased=True)
@@ -843,5 +1103,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.evo_ax.set_zlabel("Power (W)")
         self.evo_ax.set_title("Pulse Evolution")
         self._evo_cbar = self.evo_canvas.figure.colorbar(
-            surf, ax=self.evo_ax, shrink=0.6, pad=0.1)
-        self.evo_canvas.draw()
+            surf, ax=self.evo_ax, shrink=0.72, pad=0.08)
+        idx = self.evo_round_slider.value() if self.evo_round_slider.isEnabled() \
+            else max(0, len(steps) - 1)
+        self._update_evo_3d_position(idx)
+        self.evo_canvas.figure.subplots_adjust(hspace=0.32, top=0.96, bottom=0.08)
+        self.evo_canvas.draw_idle()

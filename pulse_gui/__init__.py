@@ -1,1 +1,1 @@
-"""pyLaserPulse GUI — pulse generator and fiber propagation visualizer."""
+"""Pulse-UI — pulse generator and fiber propagation visualizer."""

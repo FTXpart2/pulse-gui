@@ -13,7 +13,7 @@ import os
 import numpy as np
 import scipy.constants as const
 
-import pyLaserPulse.utils as utils
+import pulse_engine.utils as utils
 
 
 class grid:
@@ -148,7 +148,7 @@ class grid:
                  lambda_max=self.lambda_max)
 
 
-class grid_from_pyLaserPulse_simulation(grid):
+class grid_from_saved_simulation(grid):
     """
     Time-frequency grid class.
     """
@@ -159,7 +159,7 @@ class grid_from_pyLaserPulse_simulation(grid):
         ----------
         data_direcotry : str
             Absolute path of directory containing grid.npz data file produced
-            by a previous pyLaserPulse simulation.
+            by a previous pulse_engine simulation.
 
         Attributes
         ----------

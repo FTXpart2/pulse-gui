@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch the pyLaserPulse pulse generator GUI."""
+"""Launch the Pulse-UI application."""
 
 from pulse_gui.__main__ import main
 
